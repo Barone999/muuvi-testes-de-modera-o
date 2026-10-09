@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Disclaimer } from "@/components/AppShell";
+import { PregnancyDisclaimer, PregnancyFields } from "@/components/Pregnancy";
 import { uid, useInvalidate } from "@/lib/data";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
@@ -42,6 +43,8 @@ function Onboarding() {
   const [last, setLast] = useState("");
   const [cycleLen, setCycleLen] = useState(28);
   const [periodLen, setPeriodLen] = useState(5);
+  const [pregnant, setPregnant] = useState(false);
+  const [due, setDue] = useState("");
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
   const invalidate = useInvalidate();
@@ -51,7 +54,7 @@ function Onboarding() {
     const id = await uid();
     const { error } = await supabase
       .from("profiles")
-      .update({ goal, days_per_week: days, level, onboarded: true })
+      .update({ goal, days_per_week: days, level, onboarded: true, pregnant: pregnant && !!due, due_date: pregnant && due ? due : null })
       .eq("id", id);
     if (!error && withCycle && last) {
       await supabase.from("cycle_settings").upsert({
@@ -100,6 +103,18 @@ function Onboarding() {
           {l.l}
         </Option>
       ))}
+    </div>,
+    <div key="p" className="space-y-3">
+      <h1 className="text-3xl font-bold">Você está grávida?</h1>
+      <p className="text-foreground/70">Se sim, ativamos o Modo Gestante: acompanhamos suas semanas e sugerimos movimentos leves e confortáveis.</p>
+      <Option active={!pregnant} onClick={() => setPregnant(false)}>Não</Option>
+      <Option active={pregnant} onClick={() => setPregnant(true)}>🤰 Sim, estou grávida</Option>
+      {pregnant && (
+        <>
+          <PregnancyFields due={due} onChange={setDue} inputClass="w-full rounded-2xl bg-surface px-4 py-3.5" />
+          <PregnancyDisclaimer />
+        </>
+      )}
     </div>,
     <div key="c" className="space-y-4">
       <h1 className="text-3xl font-bold">Seu ciclo</h1>

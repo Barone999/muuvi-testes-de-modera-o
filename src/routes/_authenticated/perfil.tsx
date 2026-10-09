@@ -33,16 +33,20 @@ function Perfil() {
   const [days, setDays] = useState(3);
   const [cycleLen, setCycleLen] = useState(28);
   const [periodLen, setPeriodLen] = useState(5);
+  const [pregnant, setPregnant] = useState(false);
+  const [due, setDue] = useState("");
 
-  useEffect(() => { if (profile) { setName(profile.display_name); setDays(profile.days_per_week); } }, [profile]);
+  useEffect(() => { if (profile) { setName(profile.display_name); setDays(profile.days_per_week); setPregnant(profile.pregnant); setDue(profile.due_date ?? ""); } }, [profile]);
   useEffect(() => { if (cycle) { setCycleLen(cycle.settings.cycle_length); setPeriodLen(cycle.settings.period_length); } }, [cycle]);
 
   const minutes = sessions.reduce((a, s) => a + s.minutes, 0);
   const st = streak(sessions.map((s) => fmtDate(new Date(s.completed_at))));
 
   async function save() {
+    if (pregnant && !due) { toast.error("Informe as semanas ou a data prevista do parto."); return; }
     const id = await uid();
-    await supabase.from("profiles").update({ display_name: name, days_per_week: days }).eq("id", id);
+    // Cycle data is never touched here, so it is still there when she turns the mode off.
+    await supabase.from("profiles").update({ display_name: name, days_per_week: days, pregnant, due_date: pregnant ? due : null }).eq("id", id);
     if (cycle && !cycle.isDemo) {
       await supabase.from("cycle_settings").update({ cycle_length: cycleLen, period_length: periodLen }).eq("user_id", id);
     }
@@ -86,7 +90,21 @@ function Perfil() {
             ))}
           </div>
         </div>
-        {cycle && !cycle.isDemo && (
+        <div className="rounded-2xl bg-background p-4">
+          <label className="flex items-center justify-between gap-3 font-semibold">
+            <span>🤰 Estou grávida (Modo Gestante)</span>
+            <input type="checkbox" className="h-6 w-6 accent-primary" checked={pregnant} onChange={(e) => setPregnant(e.target.checked)} />
+          </label>
+          {pregnant ? (
+            <div className="mt-3 space-y-2">
+              <PregnancyFields due={due} onChange={setDue} inputClass="w-full rounded-2xl bg-surface px-4 py-3" />
+              <PregnancyDisclaimer />
+            </div>
+          ) : (
+            profile?.pregnant && <p className="mt-2 text-xs text-foreground/70">Ao salvar, seu calendário do ciclo volta com os registros anteriores.</p>
+          )}
+        </div>
+        {cycle && !cycle.isDemo && !pregnant && (
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm font-semibold">Duração do ciclo<input type="number" className={input} value={cycleLen} onChange={(e) => setCycleLen(+e.target.value)} /></label>
             <label className="block text-sm font-semibold">Dias de menstruação<input type="number" className={input} value={periodLen} onChange={(e) => setPeriodLen(+e.target.value)} /></label>
