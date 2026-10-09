@@ -45,10 +45,10 @@ function Treino() {
   let acc = 0;
   let idx = 0;
   for (; idx < intervals.length; idx++) {
-    if (elapsed < acc + intervals[idx].seconds) break;
-    acc += intervals[idx].seconds;
+    if (elapsed < acc + intervals[idx]!.seconds) break;
+    acc += intervals[idx]!.seconds;
   }
-  const cur = intervals[Math.min(idx, intervals.length - 1)];
+  const cur = intervals[Math.min(idx, intervals.length - 1)]!;
   const remaining = Math.max(0, acc + cur.seconds - elapsed);
   const prevKind = useRef(cur.kind);
   useEffect(() => {

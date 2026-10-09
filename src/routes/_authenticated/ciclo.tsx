@@ -98,7 +98,7 @@ function Ciclo() {
 
       <section className={`mt-4 rounded-3xl p-5 ${PHASE_BG[selPhase]}`}>
         <p className="text-sm font-semibold text-ink/70">
-          {selected.getDate()} de {MONTHS[selected.getMonth()].toLowerCase()} · dia {selDay} do ciclo
+          {selected.getDate()} de {MONTHS[selected.getMonth()]!.toLowerCase()} · dia {selDay} do ciclo
         </p>
         <h3 className="mt-1 text-2xl font-bold">{PHASES[selPhase].name}</h3>
         <p className="mt-2 text-sm"><strong>Como o corpo pode estar:</strong> {PHASES[selPhase].feeling}</p>
