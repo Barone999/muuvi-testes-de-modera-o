@@ -9,6 +9,8 @@ export interface Recipe {
   image: string;
   ingredients: string[];
   steps: string[];
+  /** Nutritious/hydrating option highlighted in Modo Gestante. */
+  pregnancy?: boolean;
 }
 
 const u = (id: string) => `https://images.unsplash.com/${id}?w=800&q=70`;
@@ -26,6 +28,7 @@ export const RECIPES: Recipe[] = [
   },
   {
     id: "smoothie-frutas-vermelhas",
+    pregnancy: true,
     title: "Smoothie de frutas vermelhas",
     moment: "pos",
     minutes: 5,
@@ -36,13 +39,14 @@ export const RECIPES: Recipe[] = [
   },
   {
     id: "torrada-abacate",
+    pregnancy: true,
     title: "Torrada com abacate e ovo",
     moment: "pos",
     minutes: 10,
     phases: ["folicular", "ovulatoria", "lutea"],
     image: u("photo-1525351484163-7529414344d8"),
     ingredients: ["1 fatia de pão integral", "1/2 abacate", "1 ovo", "Sal, limão e pimenta"],
-    steps: ["Toste o pão.", "Amasse o abacate com sal e limão.", "Cozinhe o ovo e coloque por cima."],
+    steps: ["Toste o pão.", "Amasse o abacate com sal e limão.", "Cozinhe bem o ovo (gema firme) e coloque por cima."],
   },
   {
     id: "chocolate-quente-cacau",
@@ -66,6 +70,7 @@ export const RECIPES: Recipe[] = [
   },
   {
     id: "bowl-iogurte-granola",
+    pregnancy: true,
     title: "Bowl de iogurte, granola e mamão",
     moment: "pre",
     minutes: 5,
@@ -73,5 +78,27 @@ export const RECIPES: Recipe[] = [
     image: u("photo-1488477181946-6428a0291777"),
     ingredients: ["1 pote de iogurte natural", "2 colheres de granola", "Mamão picado", "Sementes de chia"],
     steps: ["Coloque o iogurte em uma tigela.", "Cubra com mamão, granola e chia."],
+  },
+  {
+    id: "agua-saborizada",
+    title: "Água saborizada de laranja e hortelã",
+    moment: "pos",
+    minutes: 5,
+    phases: ["menstrual", "folicular", "ovulatoria", "lutea"],
+    pregnancy: true,
+    image: u("photo-1553530666-ba11a7da3888"),
+    ingredients: ["1 litro de água filtrada", "1 laranja em rodelas", "Folhas de hortelã bem lavadas", "Gelo"],
+    steps: ["Coloque a laranja e a hortelã na jarra.", "Complete com água e gelo.", "Deixe 15 min na geladeira e beba aos poucos."],
+  },
+  {
+    id: "vitamina-banana-aveia",
+    title: "Vitamina de banana, aveia e leite",
+    moment: "pre",
+    minutes: 5,
+    phases: ["folicular", "lutea"],
+    pregnancy: true,
+    image: u("photo-1571771894821-ce9b6c11b08e"),
+    ingredients: ["1 banana", "1 copo de leite pasteurizado (ou vegetal)", "2 colheres (sopa) de aveia", "Canela a gosto"],
+    steps: ["Bata tudo no liquidificador.", "Sirva na hora."],
   },
 ];
