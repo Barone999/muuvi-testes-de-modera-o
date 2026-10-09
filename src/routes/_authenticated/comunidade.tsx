@@ -61,12 +61,12 @@ function Comunidade() {
     if (file) {
       const path = `${user_id}/${Date.now()}-${file.name.replace(/[^\w.]/g, "")}`;
       const { error } = await supabase.storage.from("post-images").upload(path, file);
-      if (error) { setPosting(false); return toast.error("Falha ao enviar a imagem."); }
+      if (error) { setPosting(false); toast.error("Falha ao enviar a imagem."); return; }
       image_path = path;
     }
     const { error } = await supabase.from("posts").insert({ user_id, author_name: name, content: text.trim(), image_path });
     setPosting(false);
-    if (error) return toast.error("Não foi possível publicar.");
+    if (error) { toast.error("Não foi possível publicar."); return; }
     setText(""); setFile(null);
     invalidate("posts");
   }
@@ -116,7 +116,7 @@ function Comunidade() {
 type Post = ReturnType<typeof usePosts>["data"] extends (infer T)[] | undefined ? T : never;
 
 function PostCard({ post, me, myName, onLike, onReport, onComment }: {
-  post: Post; me?: string; myName: string;
+  post: Post; me?: string | undefined; myName: string;
   onLike: (id: string, liked: boolean) => void; onReport: (id: string) => void; onComment: () => void;
 }) {
   const [open, setOpen] = useState(false);

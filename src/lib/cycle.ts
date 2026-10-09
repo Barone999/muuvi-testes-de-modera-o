@@ -13,7 +13,7 @@ export function toDateOnly(d: Date) {
 }
 
 export function parseDate(s: string) {
-  const [y, m, d] = s.split("-").map(Number);
+  const [y, m, d] = s.split("-").map(Number) as [number, number, number];
   return new Date(y, m - 1, d);
 }
 

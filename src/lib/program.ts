@@ -27,7 +27,7 @@ export const LIGHT_WALK_WEEK = 0;
 
 export function buildIntervals(week: number): Interval[] {
   if (week === LIGHT_WALK_WEEK) return [{ kind: "walk", seconds: 20 * 60 }];
-  const p = PROGRAM.find((w) => w.week === week) ?? PROGRAM[0];
+  const p = PROGRAM.find((w) => w.week === week) ?? PROGRAM[0]!;
   const out: Interval[] = [{ kind: "warmup", seconds: 5 * 60 }];
   for (let i = 0; i < p.reps; i++) {
     out.push({ kind: "run", seconds: p.run * 60 });
@@ -59,10 +59,10 @@ export function programProgress(done: Done[], perWeek: number) {
     new Set(done.filter((d) => d.week === w).map((d) => d.session)).size;
   const weeks = PROGRAM.map((p, i) => {
     const completed = count(p.week);
-    const unlocked = i === 0 || count(PROGRAM[i - 1].week) >= perWeek;
+    const unlocked = i === 0 || count(PROGRAM[i - 1]!.week) >= perWeek;
     return { ...p, completed: Math.min(completed, perWeek), unlocked, finished: completed >= perWeek };
   });
-  const current = weeks.find((w) => w.unlocked && !w.finished) ?? weeks[weeks.length - 1];
+  const current = weeks.find((w) => w.unlocked && !w.finished) ?? weeks[weeks.length - 1]!;
   const doneSessions = new Set(done.filter((d) => d.week === current.week).map((d) => d.session));
   let nextSession = 1;
   while (doneSessions.has(nextSession) && nextSession < perWeek) nextSession++;

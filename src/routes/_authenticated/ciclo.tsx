@@ -120,7 +120,7 @@ function Ciclo() {
 
 type Log = { period_start: boolean; energy: string | null; mood: string | null; symptoms: string[] };
 
-function LogForm({ dateKey, initial, onSaved }: { dateKey: string; initial?: Log; onSaved: () => void }) {
+function LogForm({ dateKey, initial, onSaved }: { dateKey: string; initial?: Log | undefined; onSaved: () => void }) {
   const [periodStart, setPeriodStart] = useState(initial?.period_start ?? false);
   const [energy, setEnergy] = useState(initial?.energy ?? "");
   const [mood, setMood] = useState(initial?.mood ?? "");
@@ -146,7 +146,7 @@ function LogForm({ dateKey, initial, onSaved }: { dateKey: string; initial?: Log
       }
     }
     setSaving(false);
-    if (error) return toast.error("Não foi possível salvar.");
+    if (error) { toast.error("Não foi possível salvar."); return; }
     toast.success("Registro salvo 💛");
     onSaved();
   }

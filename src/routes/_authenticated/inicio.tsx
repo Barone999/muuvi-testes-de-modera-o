@@ -23,7 +23,7 @@ function Inicio() {
   const perWeek = profile?.days_per_week ?? 3;
   const { current, nextSession } = programProgress(sessions, perWeek);
   const light = info.workoutHint === "light";
-  const recipe = RECIPES.find((r) => r.phases.includes(phase)) ?? RECIPES[0];
+  const recipe = RECIPES.find((r) => r.phases.includes(phase)) ?? RECIPES[0]!;
   const quote = MOTIVATION[new Date().getDate() % MOTIVATION.length];
 
   return (

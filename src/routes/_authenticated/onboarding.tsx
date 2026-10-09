@@ -62,7 +62,7 @@ function Onboarding() {
       });
     }
     setSaving(false);
-    if (error) return toast.error("Não foi possível salvar. Tente novamente.");
+    if (error) { toast.error("Não foi possível salvar. Tente novamente."); return; }
     invalidate("profile", "cycle");
     navigate({ to: "/inicio", replace: true });
   }
