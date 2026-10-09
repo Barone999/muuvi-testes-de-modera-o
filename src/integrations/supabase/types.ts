@@ -196,28 +196,34 @@ export type Database = {
           created_at: string
           days_per_week: number
           display_name: string
+          due_date: string | null
           goal: string | null
           id: string
           level: string | null
           onboarded: boolean
+          pregnant: boolean
         }
         Insert: {
           created_at?: string
           days_per_week?: number
           display_name?: string
+          due_date?: string | null
           goal?: string | null
           id: string
           level?: string | null
           onboarded?: boolean
+          pregnant?: boolean
         }
         Update: {
           created_at?: string
           days_per_week?: number
           display_name?: string
+          due_date?: string | null
           goal?: string | null
           id?: string
           level?: string | null
           onboarded?: boolean
+          pregnant?: boolean
         }
         Relationships: []
       }
