@@ -1,24 +1,49 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Muuvi — comece a correr no ritmo do seu ciclo" },
+      { name: "description", content: "Programa de corrida de 8 semanas para mulheres iniciantes, com recomendações por fase do ciclo." },
+      { property: "og:title", content: "Muuvi — comece a correr no ritmo do seu ciclo" },
+      { property: "og:description", content: "Corrida leve, sem pressão, respeitando cada fase do seu corpo." },
+    ],
+  }),
+  component: Landing,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Landing() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/inicio", replace: true });
+    });
+  }, [navigate]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-between px-6 py-10">
+      <p className="font-display text-2xl font-bold text-ink">muuvi</p>
+      <div>
+        <div className="mb-8 flex gap-2">
+          {["bg-phase-menstrual", "bg-phase-folicular", "bg-phase-ovulatoria", "bg-phase-lutea"].map((c) => (
+            <span key={c} className={`h-16 flex-1 rounded-full ${c}`} />
+          ))}
+        </div>
+        <h1 className="text-4xl font-bold leading-tight">Correr no seu ritmo, em cada fase.</h1>
+        <p className="mt-4 text-lg text-foreground/80">
+          Um programa de 8 semanas para iniciantes que adapta as sugestões ao seu ciclo. Sem pressão, com carinho.
+        </p>
+      </div>
+      <div className="space-y-3">
+        <Link to="/auth" className="block rounded-full bg-primary py-4 text-center font-bold text-primary-foreground">
+          Começar
+        </Link>
+        <Link to="/auth" search={{ mode: "login" }} className="block py-2 text-center text-sm font-semibold text-bronze">
+          Já tenho conta
+        </Link>
+      </div>
     </div>
   );
 }
