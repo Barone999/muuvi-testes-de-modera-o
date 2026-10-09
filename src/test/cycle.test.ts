@@ -23,8 +23,8 @@ describe("cycle phases", () => {
 
 describe("program locking", () => {
   it("week 2 locked until week 1 sessions done", () => {
-    expect(programProgress([], 3).weeks[1].unlocked).toBe(false);
+    expect(programProgress([], 3).weeks[1]!.unlocked).toBe(false);
     const done = [1, 2, 3].map((session) => ({ week: 1, session }));
-    expect(programProgress(done, 3).weeks[1].unlocked).toBe(true);
+    expect(programProgress(done, 3).weeks[1]!.unlocked).toBe(true);
   });
 });

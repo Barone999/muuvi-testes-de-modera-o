@@ -127,7 +127,7 @@ function Concluido({ week, session, minutes }: { week: number; session: number; 
       <p className="mt-10 font-semibold text-ink">Como você se sentiu?</p>
       <div className="mt-3 grid w-full grid-cols-3 gap-3">
         {[["otimo", "😄", "Ótimo"], ["ok", "🙂", "Ok"], ["dificil", "😮‍💨", "Difícil"]].map(([v, e, l]) => (
-          <button key={v} onClick={() => feel(v)} className={`rounded-3xl py-4 font-semibold ${saved === v ? "bg-ink text-ink-foreground" : "bg-background"}`}>
+          <button key={v} onClick={() => feel(v!)} className={`rounded-3xl py-4 font-semibold ${saved === v ? "bg-ink text-ink-foreground" : "bg-background"}`}>
             <span className="block text-3xl">{e}</span>{l}
           </button>
         ))}

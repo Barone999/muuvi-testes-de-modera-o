@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>) => ({ mode: s.mode === "login" ? "login" : undefined }) as { mode?: "login" },
+  validateSearch: (s: Record<string, unknown>) => ({ mode: s["mode"] === "login" ? "login" : undefined }) as { mode?: "login" },
   head: () => ({
     meta: [
       { title: "Entrar — Muuvi" },
