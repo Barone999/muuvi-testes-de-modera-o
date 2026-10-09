@@ -1,4 +1,4 @@
-export type IntervalKind = "warmup" | "run" | "walk" | "cooldown";
+export type IntervalKind = "warmup" | "run" | "walk" | "cooldown" | "hydrate";
 export interface Interval {
   kind: IntervalKind;
   seconds: number;
@@ -25,8 +25,23 @@ export const PROGRAM: WeekPlan[] = [
 
 export const LIGHT_WALK_WEEK = 0;
 
+/** Pregnancy walks are stored as week 101/102/103 (by trimester). */
+export const pregnancyWeek = (trimester: number) => 100 + trimester;
+export const isPregnancyWeek = (week: number) => week > 100 && week < 104;
+const PREG: Record<number, { walk: number; reps: number }> = { 101: { walk: 5, reps: 3 }, 102: { walk: 6, reps: 3 }, 103: { walk: 4, reps: 3 } };
+
 export function buildIntervals(week: number): Interval[] {
   if (week === LIGHT_WALK_WEEK) return [{ kind: "walk", seconds: 20 * 60 }];
+  if (isPregnancyWeek(week)) {
+    const p = PREG[week]!;
+    const out: Interval[] = [{ kind: "warmup", seconds: 3 * 60 }];
+    for (let i = 0; i < p.reps; i++) {
+      out.push({ kind: "walk", seconds: p.walk * 60 });
+      out.push({ kind: "hydrate", seconds: 60 });
+    }
+    out.push({ kind: "cooldown", seconds: 3 * 60 });
+    return out;
+  }
   const p = PROGRAM.find((w) => w.week === week) ?? PROGRAM[0]!;
   const out: Interval[] = [{ kind: "warmup", seconds: 5 * 60 }];
   for (let i = 0; i < p.reps; i++) {
@@ -43,6 +58,10 @@ export function totalMinutes(week: number) {
 
 export function describeWeek(week: number) {
   if (week === LIGHT_WALK_WEEK) return "20 min de caminhada leve";
+  if (isPregnancyWeek(week)) {
+    const p = PREG[week]!;
+    return `${p.walk} min caminhando no seu ritmo + 1 min de pausa para água, ${p.reps}x`;
+  }
   const p = PROGRAM.find((w) => w.week === week)!;
   const run = p.run % 1 ? `${p.run.toString().replace(".", ",")} min` : `${p.run} min`;
   return `${run} correndo + ${p.walk} min caminhando, ${p.reps}x`;
