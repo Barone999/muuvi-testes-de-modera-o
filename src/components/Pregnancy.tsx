@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Clock, Droplets, Play, Sparkles } from "lucide-react";
-import { dailyTip, gestation, TRIMESTERS, type Trimester } from "@/lib/pregnancy";
+import { useState } from "react";
+import { dailyTip, dueDateFromWeeks, gestation, TRIMESTERS, type Trimester } from "@/lib/pregnancy";
 import { describeWeek, pregnancyWeek, totalMinutes } from "@/lib/program";
 
 export function PregnancyDisclaimer({ className = "" }: { className?: string }) {
@@ -62,5 +63,28 @@ export function PregnancyWorkout({ due }: { due: string }) {
         <Link to="/treinos" className="text-ink-foreground/70 underline">Escolher outro treino</Link>
       </div>
     </section>
+  );
+}
+
+/** Input for gestational weeks or due date; always reports a due date (YYYY-MM-DD) or "". */
+export function PregnancyFields({ due, onChange, inputClass }: { due: string; onChange: (d: string) => void; inputClass: string }) {
+  const [mode, setMode] = useState<"weeks" | "date">("weeks");
+  const weeks = due ? gestation(due).week - 1 : "";
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        {(["weeks", "date"] as const).map((m) => (
+          <button key={m} type="button" onClick={() => setMode(m)} className={`rounded-2xl py-2.5 text-sm font-bold ${mode === m ? "bg-ink text-ink-foreground" : "bg-background"}`}>
+            {m === "weeks" ? "Semanas de gestação" : "Data prevista do parto"}
+          </button>
+        ))}
+      </div>
+      {mode === "weeks" ? (
+        <input type="number" min={1} max={41} placeholder="Ex.: 12" className={inputClass} value={weeks}
+          onChange={(e) => { const n = +e.target.value; onChange(n >= 1 && n <= 41 ? dueDateFromWeeks(n) : ""); }} />
+      ) : (
+        <input type="date" className={inputClass} value={due} onChange={(e) => onChange(e.target.value)} />
+      )}
+    </div>
   );
 }
