@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Lock, CheckCircle2, Play } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useProfile, useSessions } from "@/lib/data";
-import { describeWeek, programProgress, totalMinutes } from "@/lib/program";
+import { describeWeek, pregnancyWeek, programProgress, totalMinutes } from "@/lib/program";
+import { gestation, TRIMESTERS } from "@/lib/pregnancy";
+import { PregnancyDisclaimer } from "@/components/Pregnancy";
 
 export const Route = createFileRoute("/_authenticated/treinos")({
   head: () => ({ meta: [{ title: "Treinos — Muuvi" }, { name: "description", content: "Seu programa de 8 semanas." }] }),
@@ -15,6 +17,38 @@ function Treinos() {
   const perWeek = profile?.days_per_week ?? 3;
   const { weeks, current } = programProgress(sessions, perWeek);
   const doneSet = new Set(sessions.map((s) => `${s.week}-${s.session}`));
+
+  if (profile?.pregnant && profile.due_date) {
+    const tri = gestation(profile.due_date).trimester;
+    return (
+      <AppShell title="Treinos">
+        <p className="mb-4 text-foreground/70">No Modo Gestante, o programa de corrida fica pausado. Aqui o foco é conforto, baixo impacto e pausas para água.</p>
+        <div className="space-y-3">
+          {([1, 2, 3] as const).map((n) => {
+            const w = pregnancyWeek(n);
+            return (
+              <Link key={n} to="/treino/$week/$session" params={{ week: String(w), session: "1" }} className={`flex items-center justify-between gap-3 rounded-3xl p-5 ${n === tri ? "bg-blush" : "bg-surface"}`}>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-bronze">{TRIMESTERS[n].name}{n === tri && " · você está aqui"}</p>
+                  <h3 className="text-lg font-bold">Caminhada no seu ritmo</h3>
+                  <p className="text-sm text-foreground/70">{describeWeek(w)} · {totalMinutes(w)} min</p>
+                </div>
+                <Play className="h-5 w-5 shrink-0 text-ink" />
+              </Link>
+            );
+          })}
+          <Link to="/treino/$week/$session" params={{ week: "0", session: "0" }} className="flex items-center justify-between rounded-3xl bg-sage p-5">
+            <div>
+              <p className="font-display font-bold text-ink">Caminhada leve livre</p>
+              <p className="text-sm text-foreground/70">20 min · pare quando quiser</p>
+            </div>
+            <Play className="h-5 w-5 text-ink" />
+          </Link>
+        </div>
+        <PregnancyDisclaimer className="mt-4" />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Treinos">
