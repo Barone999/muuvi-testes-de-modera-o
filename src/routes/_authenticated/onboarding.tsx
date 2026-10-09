@@ -81,12 +81,12 @@ function Onboarding() {
     <div key="d" className="space-y-3">
       <h1 className="text-3xl font-bold">Quantos dias por semana?</h1>
       <p className="text-foreground/70">Escolha o que cabe na sua rotina. Dá para mudar depois.</p>
-      <div className="grid grid-cols-3 gap-3">
-        {[2, 3, 4].map((n) => (
+      <div className="grid grid-cols-7 gap-2">
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => (
           <button
             key={n}
             onClick={() => setDays(n)}
-            className={`rounded-3xl py-6 text-2xl font-bold ${days === n ? "bg-primary text-primary-foreground" : "bg-surface"}`}
+            className={`rounded-2xl py-3.5 text-lg font-bold ${days === n ? "bg-primary text-primary-foreground" : "bg-surface"}`}
           >
             {n}
           </button>

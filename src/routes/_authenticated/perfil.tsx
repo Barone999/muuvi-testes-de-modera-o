@@ -80,9 +80,9 @@ function Perfil() {
         <label className="block text-sm font-semibold">Nome<input className={input} value={name} onChange={(e) => setName(e.target.value)} /></label>
         <div>
           <p className="text-sm font-semibold">Treinos por semana</p>
-          <div className="mt-1 grid grid-cols-3 gap-2">
-            {[2, 3, 4].map((n) => (
-              <button key={n} onClick={() => setDays(n)} className={`rounded-2xl py-3 font-bold ${days === n ? "bg-primary text-primary-foreground" : "bg-background"}`}>{n}</button>
+          <div className="mt-1 grid grid-cols-7 gap-1.5">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <button key={n} onClick={() => setDays(n)} className={`rounded-xl py-2.5 text-sm font-bold ${days === n ? "bg-primary text-primary-foreground" : "bg-background"}`}>{n}</button>
             ))}
           </div>
         </div>
