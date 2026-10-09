@@ -5,6 +5,7 @@ import { cycleDay, MOTIVATION, PHASES, PHASE_BG, phaseForDay } from "@/lib/cycle
 import { useCycle, useProfile, useSessions } from "@/lib/data";
 import { describeWeek, LIGHT_WALK_WEEK, programProgress, totalMinutes } from "@/lib/program";
 import { RECIPES } from "@/lib/recipes";
+import { PregnancyDisclaimer, PregnancyStatus, PregnancyTip, PregnancyWorkout } from "@/components/Pregnancy";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({ meta: [{ title: "Início — Muuvi" }, { name: "description", content: "Seu treino de hoje." }] }),
@@ -15,7 +16,27 @@ function Inicio() {
   const { data: profile } = useProfile();
   const { data: cycle } = useCycle();
   const { data: sessions = [] } = useSessions();
-  if (!cycle) return <AppShell><div className="h-40 animate-pulse rounded-3xl bg-surface" /></AppShell>;
+  if (!cycle || !profile) return <AppShell><div className="h-40 animate-pulse rounded-3xl bg-surface" /></AppShell>;
+
+  if (profile.pregnant && profile.due_date) {
+    const recipe = RECIPES.find((r) => r.pregnancy) ?? RECIPES[0]!;
+    return (
+      <AppShell title={`Oi, ${profile.display_name} 👋`}>
+        <PregnancyStatus due={profile.due_date} />
+        <PregnancyTip />
+        <PregnancyWorkout due={profile.due_date} />
+        <Link to="/receitas" className="mt-4 grid grid-cols-[96px_minmax(0,1fr)] items-center gap-4 rounded-3xl bg-surface p-3">
+          <img src={recipe.image} alt={recipe.title} className="h-24 w-24 rounded-2xl object-cover" />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-bronze">Receita para a gestação</p>
+            <p className="mt-1 font-display font-bold text-ink">{recipe.title}</p>
+            <p className="text-xs text-foreground/60">{recipe.minutes} min</p>
+          </div>
+        </Link>
+        <PregnancyDisclaimer className="mt-4" />
+      </AppShell>
+    );
+  }
 
   const day = cycleDay(new Date(), cycle.settings)!;
   const phase = phaseForDay(day, cycle.settings);

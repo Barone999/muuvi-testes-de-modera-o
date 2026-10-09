@@ -4,20 +4,21 @@ import { Pause, Play, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uid, useInvalidate } from "@/lib/data";
-import { buildIntervals, type IntervalKind } from "@/lib/program";
+import { buildIntervals, isPregnancyWeek, type IntervalKind } from "@/lib/program";
 
 export const Route = createFileRoute("/_authenticated/treino/$week/$session")({
   head: () => ({ meta: [{ title: "Treino ativo — Muuvi" }, { name: "description", content: "Seu treino em andamento." }] }),
   component: Treino,
 });
 
-const LABEL: Record<IntervalKind, string> = { warmup: "AQUEÇA", run: "CORRA", walk: "CAMINHE", cooldown: "DESACELERE" };
-const BG: Record<IntervalKind, string> = { warmup: "bg-sage", run: "bg-primary", walk: "bg-blush", cooldown: "bg-sage" };
+const LABEL: Record<IntervalKind, string> = { warmup: "AQUEÇA", run: "CORRA", walk: "CAMINHE", cooldown: "DESACELERE", hydrate: "BEBA ÁGUA" };
+const BG: Record<IntervalKind, string> = { warmup: "bg-sage", run: "bg-primary", walk: "bg-blush", cooldown: "bg-sage", hydrate: "bg-sage" };
 const HINT: Record<IntervalKind, string> = {
   warmup: "Caminhada tranquila para acordar o corpo",
   run: "Num ritmo em que dá para conversar",
   walk: "Respire fundo e recupere",
   cooldown: "Caminhe devagar e solte o corpo",
+  hydrate: "Pare, respire e tome uns goles de água",
 };
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -62,7 +63,7 @@ function Treino() {
     <div className={`mx-auto flex min-h-screen max-w-md flex-col px-6 py-6 transition-colors duration-500 ${BG[cur.kind]}`}>
       <div className="flex items-center justify-between">
         <Link to="/inicio" aria-label="Fechar" className="grid h-10 w-10 place-items-center rounded-full bg-background/60"><X className="h-5 w-5" /></Link>
-        <p className="font-semibold text-ink">{w === 0 ? "Caminhada leve" : `Semana ${w} · Treino ${session}`}</p>
+        <p className="font-semibold text-ink">{w === 0 ? "Caminhada leve" : isPregnancyWeek(w) ? "Caminhada gestante" : `Semana ${w} · Treino ${session}`}</p>
         <span className="w-10" />
       </div>
 

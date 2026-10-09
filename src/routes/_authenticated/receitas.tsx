@@ -4,7 +4,8 @@ import { Heart, Clock, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { PHASES, type Phase } from "@/lib/cycle";
-import { uid, useFavorites, useInvalidate } from "@/lib/data";
+import { uid, useFavorites, useInvalidate, useProfile } from "@/lib/data";
+import { PregnancyDisclaimer } from "@/components/Pregnancy";
 import { RECIPES, type Recipe } from "@/lib/recipes";
 
 export const Route = createFileRoute("/_authenticated/receitas")({
@@ -13,10 +14,14 @@ export const Route = createFileRoute("/_authenticated/receitas")({
 });
 
 function Receitas() {
+  const { data: profile } = useProfile();
+  const isPregnant = !!profile?.pregnant;
   const [moment, setMoment] = useState<"" | "pre" | "pos">("");
   const [time, setTime] = useState(0);
   const [phase, setPhase] = useState<"" | Phase>("");
   const [onlyFav, setOnlyFav] = useState(false);
+  const [preg, setPreg] = useState<boolean | null>(null);
+  const onlyPreg = preg ?? isPregnant;
   const [open, setOpen] = useState<Recipe | null>(null);
   const { data: favs = new Set<string>() } = useFavorites();
   const invalidate = useInvalidate();
@@ -29,31 +34,36 @@ function Receitas() {
   }
 
   const list = RECIPES.filter(
-    (r) => (!moment || r.moment === moment) && (!time || r.minutes <= time) && (!phase || r.phases.includes(phase)) && (!onlyFav || favs.has(r.id)),
+    (r) => (!moment || r.moment === moment) && (!time || r.minutes <= time) && (!phase || r.phases.includes(phase)) && (!onlyFav || favs.has(r.id)) && (!onlyPreg || r.pregnancy),
   );
   const chip = (on: boolean) => `shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${on ? "bg-ink text-ink-foreground" : "bg-surface"}`;
 
   return (
     <AppShell title="Receitas">
+      {onlyPreg && <PregnancyDisclaimer className="mb-3" />}
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-2">
+        <button className={chip(onlyPreg)} onClick={() => setPreg(!onlyPreg)}>🤰 Gestação</button>
         <button className={chip(!moment)} onClick={() => setMoment("")}>Todas</button>
         <button className={chip(moment === "pre")} onClick={() => setMoment("pre")}>Pré-treino</button>
         <button className={chip(moment === "pos")} onClick={() => setMoment("pos")}>Pós-treino</button>
         <button className={chip(time === 5)} onClick={() => setTime(time === 5 ? 0 : 5)}>Até 5 min</button>
         <button className={chip(onlyFav)} onClick={() => setOnlyFav(!onlyFav)}>♥ Favoritas</button>
       </div>
-      <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-4">
-        {(Object.keys(PHASES) as Phase[]).map((p) => (
-          <button key={p} className={chip(phase === p)} onClick={() => setPhase(phase === p ? "" : p)}>{PHASES[p].short}</button>
-        ))}
-      </div>
+      {!isPregnant && (
+        <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-4">
+          {(Object.keys(PHASES) as Phase[]).map((p) => (
+            <button key={p} className={chip(phase === p)} onClick={() => setPhase(phase === p ? "" : p)}>{PHASES[p].short}</button>
+          ))}
+        </div>
+      )}
+      {isPregnant && <div className="pb-2" />}
       <div className="grid grid-cols-2 gap-3">
         {list.map((r) => (
           <div key={r.id} className="overflow-hidden rounded-3xl bg-surface">
             <button onClick={() => setOpen(r)} className="block w-full text-left">
               <img src={r.image} alt={r.title} className="aspect-square w-full object-cover" loading="lazy" />
               <div className="p-3">
-                <p className="text-xs font-semibold text-bronze">{r.moment === "pre" ? "Pré" : "Pós"}-treino</p>
+                <p className="text-xs font-semibold text-bronze">{r.moment === "pre" ? "Pré" : "Pós"}-treino{r.pregnancy && " · 🤰"}</p>
                 <p className="font-display text-sm font-bold leading-tight text-ink">{r.title}</p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-foreground/60"><Clock className="h-3 w-3" />{r.minutes} min</p>
               </div>

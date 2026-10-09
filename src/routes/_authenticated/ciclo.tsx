@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { cycleDay, fmtDate, PHASES, PHASE_BG, phaseForDay, toDateOnly, type Phase } from "@/lib/cycle";
-import { uid, useCycle, useCycleLogs, useInvalidate, useSessions } from "@/lib/data";
+import { uid, useCycle, useCycleLogs, useInvalidate, useProfile, useSessions } from "@/lib/data";
+import { PregnancyDisclaimer, PregnancyStatus, PregnancyTip } from "@/components/Pregnancy";
+import { TRIMESTERS } from "@/lib/pregnancy";
 
 export const Route = createFileRoute("/_authenticated/ciclo")({
   head: () => ({ meta: [{ title: "Ciclo — Muuvi" }, { name: "description", content: "Seu calendário do ciclo." }] }),
@@ -19,6 +21,33 @@ const MOOD = ["😔", "😐", "🙂", "😄"];
 const SYMPTOMS = ["Cólica", "Dor de cabeça", "Inchaço", "Cansaço", "Sensibilidade", "Nenhum"];
 
 function Ciclo() {
+  const { data: profile } = useProfile();
+  if (profile?.pregnant && profile.due_date) return <Gestacao due={profile.due_date} />;
+  return <CicloView />;
+}
+
+function Gestacao({ due }: { due: string }) {
+  return (
+    <AppShell title="Gestação">
+      <PregnancyStatus due={due} />
+      <PregnancyTip />
+      <section className="mt-4 space-y-3">
+        {([1, 2, 3] as const).map((n) => (
+          <div key={n} className="rounded-3xl bg-surface p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-bronze">{TRIMESTERS[n].range}</p>
+            <h3 className="text-lg font-bold">{TRIMESTERS[n].name}</h3>
+            <p className="mt-1 text-sm text-foreground/80">{TRIMESTERS[n].body}</p>
+            <p className="mt-2 text-sm text-foreground/70"><b>Movimento:</b> {TRIMESTERS[n].workout}</p>
+          </div>
+        ))}
+      </section>
+      <p className="mt-4 rounded-2xl bg-blush p-3 text-sm">Seus registros de ciclo continuam guardados e voltam quando você desativar o Modo Gestante no Perfil.</p>
+      <PregnancyDisclaimer className="mt-4" />
+    </AppShell>
+  );
+}
+
+function CicloView() {
   const { data: cycle } = useCycle();
   const { data: logs = [] } = useCycleLogs();
   const { data: sessions = [] } = useSessions();
