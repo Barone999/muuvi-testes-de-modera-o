@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
-import { cycleDay, fmtDate, PHASES, PHASE_BG, phaseForDay, toDateOnly, type Phase } from "@/lib/cycle";
+import { cycleDay, fmtDate, PHASES, PHASE_BG, phaseForDay, referenceAfterRemoval, toDateOnly, type Phase } from "@/lib/cycle";
 import { uid, useCycle, useCycleLogs, useInvalidate, useProfile, useSessions } from "@/lib/data";
 import { PregnancyDisclaimer, PregnancyStatus, PregnancyTip } from "@/components/Pregnancy";
 import { TRIMESTERS } from "@/lib/pregnancy";
@@ -172,6 +172,19 @@ function LogForm({ dateKey, initial, onSaved }: { dateKey: string; initial?: Log
           cycle_length: cur?.cycle_length ?? 28,
           period_length: cur?.period_length ?? 5,
         });
+      }
+    }
+    if (!error && !periodStart && initial?.period_start) {
+      // Unmarked by mistake: move the reference back to the latest remaining start.
+      const [{ data: cur }, { data: starts }] = await Promise.all([
+        supabase.from("cycle_settings").select("*").eq("user_id", id).maybeSingle(),
+        supabase.from("cycle_logs").select("log_date").eq("user_id", id).eq("period_start", true),
+      ]);
+      if (cur) {
+        const next = referenceAfterRemoval(cur.last_period_start, dateKey, (starts ?? []).map((r) => r.log_date));
+        if (next !== cur.last_period_start) {
+          await supabase.from("cycle_settings").update({ last_period_start: next }).eq("user_id", id);
+        }
       }
     }
     setSaving(false);

@@ -4,7 +4,7 @@ import { Pause, Play, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uid, useInvalidate } from "@/lib/data";
-import { buildIntervals, isPregnancyWeek, type IntervalKind } from "@/lib/program";
+import { buildIntervals, isPregnancyWeek, isWorkoutComplete, type IntervalKind } from "@/lib/program";
 
 export const Route = createFileRoute("/_authenticated/treino/$week/$session")({
   head: () => ({ meta: [{ title: "Treino ativo — Muuvi" }, { name: "description", content: "Seu treino em andamento." }] }),
@@ -57,6 +57,7 @@ function Treino() {
     prevKind.current = cur.kind;
   }, [cur.kind, running]);
 
+  if (finished && !isWorkoutComplete(w, elapsed)) return <Interrompido week={w} session={Number(session)} minutes={Math.round(elapsed / 60)} onResume={() => { setFinished(false); setRunning(true); }} />;
   if (finished) return <Concluido week={w} session={Number(session)} minutes={Math.max(1, Math.round(elapsed / 60))} />;
 
   return (
@@ -104,7 +105,10 @@ function Concluido({ week, session, minutes }: { week: number; session: number; 
   const invalidate = useInvalidate();
   const idRef = useRef<string | null>(null);
 
+  const started = useRef(false);
   useEffect(() => {
+    if (started.current) return; // avoid duplicate inserts on re-mount
+    started.current = true;
     (async () => {
       const user_id = await uid();
       const { data, error } = await supabase.from("workout_sessions").insert({ user_id, week, session, minutes }).select("id").single();
@@ -137,6 +141,21 @@ function Concluido({ week, session, minutes }: { week: number; session: number; 
       <button onClick={() => navigate({ to: "/inicio" })} className="mt-10 w-full rounded-full bg-primary py-4 font-bold text-primary-foreground">
         Voltar ao início
       </button>
+    </div>
+  );
+}
+
+function Interrompido({ week, session, minutes, onResume }: { week: number; session: number; minutes: number; onResume: () => void }) {
+  return (
+    <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center bg-sage px-6 text-center">
+      <div className="text-6xl">🌿</div>
+      <h1 className="mt-4 text-3xl font-bold">Tudo bem parar hoje</h1>
+      <p className="mt-2 text-ink/80">
+        {minutes > 0 ? `Você se movimentou por ${minutes} min. ` : ""}Como o treino não chegou ao fim, ele não conta para a progressão — você pode repeti-lo quando quiser.
+      </p>
+      <button onClick={onResume} className="mt-8 w-full rounded-full bg-primary py-4 font-bold text-primary-foreground">Continuar treino</button>
+      <Link to="/treino/$week/$session" params={{ week: String(week), session: String(session) }} reloadDocument className="mt-3 w-full rounded-full bg-background py-4 font-bold">Recomeçar do início</Link>
+      <Link to="/inicio" className="mt-3 w-full rounded-full py-3 font-semibold text-ink/80">Voltar ao início</Link>
     </div>
   );
 }

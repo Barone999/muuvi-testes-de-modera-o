@@ -45,6 +45,16 @@ export function phaseForDate(date: Date, s: CycleSettings): Phase | null {
   return d == null ? null : phaseForDay(d, s);
 }
 
+/**
+ * Reference date after a period start is unmarked: unchanged unless it pointed at the
+ * removed date; then the latest remaining recorded start, or null when none is left.
+ */
+export function referenceAfterRemoval(current: string | null, removed: string, remainingStarts: string[]) {
+  if (current !== removed) return current;
+  const rest = remainingStarts.filter((d) => d !== removed).sort();
+  return rest.length ? rest[rest.length - 1]! : null;
+}
+
 export interface PhaseInfo {
   name: string;
   short: string;

@@ -78,7 +78,10 @@ export function programProgress(done: Done[], perWeek: number) {
     new Set(done.filter((d) => d.week === w).map((d) => d.session)).size;
   const weeks = PROGRAM.map((p, i) => {
     const completed = count(p.week);
-    const unlocked = i === 0 || count(PROGRAM[i - 1]!.week) >= perWeek;
+    // A week stays unlocked once she has trained in it (or any later week), so raising
+    // the weekly goal never re-locks weeks she already reached.
+    const reached = done.some((d) => d.week >= p.week && d.week <= PROGRAM[PROGRAM.length - 1]!.week);
+    const unlocked = i === 0 || reached || count(PROGRAM[i - 1]!.week) >= perWeek;
     return { ...p, completed: Math.min(completed, perWeek), unlocked, finished: completed >= perWeek };
   });
   const current = weeks.find((w) => w.unlocked && !w.finished) ?? weeks[weeks.length - 1]!;
@@ -86,4 +89,19 @@ export function programProgress(done: Done[], perWeek: number) {
   let nextSession = 1;
   while (doneSessions.has(nextSession) && nextSession < perWeek) nextSession++;
   return { weeks, current, nextSession };
+}
+
+/**
+ * A workout counts as completed only when every main interval (run/walk/hydrate)
+ * was done — skipping the final cooldown is fine. Without a cooldown, 80% of the total.
+ */
+export function minSecondsToComplete(week: number) {
+  const iv = buildIntervals(week);
+  const total = iv.reduce((a, i) => a + i.seconds, 0);
+  const last = iv[iv.length - 1]!;
+  return last.kind === "cooldown" ? total - last.seconds : Math.ceil(total * 0.8);
+}
+
+export function isWorkoutComplete(week: number, elapsedSeconds: number) {
+  return elapsedSeconds >= minSecondsToComplete(week);
 }
