@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
-import { cycleDay, fmtDate, PHASES, PHASE_BG, phaseForDay, referenceAfterRemoval, toDateOnly, type Phase } from "@/lib/cycle";
+import { cycleDay, endsToClear, fmtDate, FLOW_LEVELS, observedLength, periodStartFor, PHASES, PHASE_BG, phaseForDay, referenceAfterRemoval, toDateOnly, toggleFlow, type Phase } from "@/lib/cycle";
 import { uid, useCycle, useCycleLogs, useInvalidate, useProfile, useSessions } from "@/lib/data";
 import { PregnancyDisclaimer, PregnancyStatus, PregnancyTip } from "@/components/Pregnancy";
 import { TRIMESTERS } from "@/lib/pregnancy";
@@ -213,6 +213,28 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
         <span className="font-semibold">Minha menstruação começou neste dia</span>
         <input type="checkbox" checked={periodStart} onChange={(e) => setPeriodStart(e.target.checked)} className="h-5 w-5 accent-[var(--primary)]" />
       </label>
+      {canEnd ? (
+        <div>
+          <label className="flex items-center justify-between rounded-2xl bg-sage px-4 py-3">
+            <span className="font-semibold">Minha menstruação terminou neste dia</span>
+            <input type="checkbox" checked={periodEnded} onChange={(e) => setPeriodEnded(e.target.checked)} className="h-5 w-5 accent-[var(--primary)]" />
+          </label>
+          {periodEnded && realStart && (
+            <p className="mt-2 text-xs text-foreground/70">
+              Duração observada: {observedLength(realStart, dateKey)} dias (início em {realStart.split("-").reverse().join("/")}). Se a data estiver errada, desmarque aqui e marque o dia certo.
+            </p>
+          )}
+        </div>
+      ) : !periodStart && (
+        <p className="rounded-2xl bg-background px-4 py-3 text-xs text-foreground/70">
+          Para registrar o fim da menstruação, primeiro marque o dia em que ela começou.
+        </p>
+      )}
+      <div>
+        <p className="text-sm font-semibold">Fluxo menstrual</p>
+        <p className="mb-2 text-xs text-foreground/60">Qual foi a intensidade do seu fluxo hoje? Toque de novo para remover.</p>
+        <div className="flex flex-wrap gap-2">{FLOW_LEVELS.map((f) => <button key={f} onClick={() => setFlow(toggleFlow(flow, f))} className={chip(flow === f)}>{f}</button>)}</div>
+      </div>
       <div>
         <p className="mb-2 text-sm font-semibold">Energia</p>
         <div className="flex flex-wrap gap-2">{ENERGY.map((e) => <button key={e} onClick={() => setEnergy(e)} className={chip(energy === e)}>{e}</button>)}</div>
