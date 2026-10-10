@@ -18,9 +18,11 @@ export type Database = {
         Row: {
           created_at: string
           energy: string | null
+          flow: string | null
           id: string
           log_date: string
           mood: string | null
+          period_ended: boolean
           period_start: boolean
           symptoms: string[]
           user_id: string
@@ -28,9 +30,11 @@ export type Database = {
         Insert: {
           created_at?: string
           energy?: string | null
+          flow?: string | null
           id?: string
           log_date: string
           mood?: string | null
+          period_ended?: boolean
           period_start?: boolean
           symptoms?: string[]
           user_id: string
@@ -38,9 +42,11 @@ export type Database = {
         Update: {
           created_at?: string
           energy?: string | null
+          flow?: string | null
           id?: string
           log_date?: string
           mood?: string | null
+          period_ended?: boolean
           period_start?: boolean
           symptoms?: string[]
           user_id?: string

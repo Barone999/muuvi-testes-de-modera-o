@@ -15,6 +15,13 @@
       "when": 1791586002624,
       "tag": "0001_pregnancy_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791625786153,
+      "tag": "0002_cycle_logs_flow_period_end",
+      "breakpoints": true
     }
   ]
 }
