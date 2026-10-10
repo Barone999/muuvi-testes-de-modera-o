@@ -55,6 +55,31 @@ export function referenceAfterRemoval(current: string | null, removed: string, r
   return rest.length ? rest[rest.length - 1]! : null;
 }
 
+export const FLOW_LEVELS = ["Muito leve", "Leve", "Moderado", "Intenso"] as const;
+export type Flow = (typeof FLOW_LEVELS)[number];
+
+/** Toggle a flow choice: tapping the selected level again removes it. */
+export function toggleFlow(current: string | null, picked: Flow): Flow | null {
+  return current === picked ? null : picked;
+}
+
+/** Latest real recorded period start on or before `date` (YYYY-MM-DD), or null. */
+export function periodStartFor(date: string, starts: string[]): string | null {
+  const prior = starts.filter((d) => d <= date).sort();
+  return prior.length ? prior[prior.length - 1]! : null;
+}
+
+/** Other end dates of the same period (between its start and the next start) to unmark. */
+export function endsToClear(start: string, endDate: string, starts: string[], ends: string[]): string[] {
+  const next = starts.filter((d) => d > start).sort()[0];
+  return ends.filter((d) => d !== endDate && d >= start && (!next || d < next));
+}
+
+/** Observed period length in days, counting start and end days. */
+export function observedLength(start: string, end: string): number {
+  return Math.round((parseDate(end).getTime() - parseDate(start).getTime()) / DAY) + 1;
+}
+
 export interface PhaseInfo {
   name: string;
   short: string;

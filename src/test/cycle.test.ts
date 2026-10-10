@@ -87,3 +87,35 @@ describe("unmarking a period start", () => {
     expect(referenceAfterRemoval("2026-03-01", "2026-03-01", ["2026-03-01"])).toBeNull();
   });
 });
+
+import { FLOW_LEVELS, toggleFlow, periodStartFor, endsToClear, observedLength } from "@/lib/cycle";
+
+describe("menstrual flow", () => {
+  it("offers exactly the four levels", () => {
+    expect([...FLOW_LEVELS]).toEqual(["Muito leve", "Leve", "Moderado", "Intenso"]);
+  });
+  it.each(FLOW_LEVELS)("selecting %s saves it", (lvl) => {
+    expect(toggleFlow(null, lvl)).toBe(lvl);
+  });
+  it("editing replaces the level", () => {
+    expect(toggleFlow("Leve", "Intenso")).toBe("Intenso");
+  });
+  it("tapping the selected level removes it", () => {
+    expect(toggleFlow("Moderado", "Moderado")).toBeNull();
+  });
+});
+
+describe("period end", () => {
+  const starts = ["2026-01-05", "2026-02-02"];
+  it("needs a real start on or before the date", () => {
+    expect(periodStartFor("2026-01-01", starts)).toBeNull();
+    expect(periodStartFor("2026-01-09", starts)).toBe("2026-01-05");
+    expect(periodStartFor("2026-02-06", starts)).toBe("2026-02-02");
+  });
+  it("correcting the end clears the previous end of the same period only", () => {
+    expect(endsToClear("2026-01-05", "2026-01-10", starts, ["2026-01-08", "2026-02-06"])).toEqual(["2026-01-08"]);
+  });
+  it("observed length counts start and end days", () => {
+    expect(observedLength("2026-01-05", "2026-01-09")).toBe(5);
+  });
+});

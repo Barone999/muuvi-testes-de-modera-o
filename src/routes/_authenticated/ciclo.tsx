@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
-import { cycleDay, fmtDate, PHASES, PHASE_BG, phaseForDay, referenceAfterRemoval, toDateOnly, type Phase } from "@/lib/cycle";
+import { cycleDay, endsToClear, fmtDate, FLOW_LEVELS, observedLength, periodStartFor, PHASES, PHASE_BG, phaseForDay, referenceAfterRemoval, toDateOnly, toggleFlow, type Phase } from "@/lib/cycle";
 import { uid, useCycle, useCycleLogs, useInvalidate, useProfile, useSessions } from "@/lib/data";
 import { PregnancyDisclaimer, PregnancyStatus, PregnancyTip } from "@/components/Pregnancy";
 import { TRIMESTERS } from "@/lib/pregnancy";
@@ -140,6 +140,8 @@ function CicloView() {
           key={selKey}
           dateKey={selKey}
           initial={selLog}
+          starts={logs.filter((l) => l.period_start).map((l) => l.log_date)}
+          ends={logs.filter((l) => l.period_ended).map((l) => l.log_date)}
           onSaved={() => invalidate("cycle_logs", "cycle")}
         />
       )}
@@ -147,22 +149,31 @@ function CicloView() {
   );
 }
 
-type Log = { period_start: boolean; energy: string | null; mood: string | null; symptoms: string[] };
+type Log = { period_start: boolean; period_ended: boolean; flow: string | null; energy: string | null; mood: string | null; symptoms: string[] };
 
-function LogForm({ dateKey, initial, onSaved }: { dateKey: string; initial?: Log | undefined; onSaved: () => void }) {
+function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string; initial?: Log | undefined; starts: string[]; ends: string[]; onSaved: () => void }) {
   const [periodStart, setPeriodStart] = useState(initial?.period_start ?? false);
+  const [periodEnded, setPeriodEnded] = useState(initial?.period_ended ?? false);
+  const [flow, setFlow] = useState<string | null>(initial?.flow ?? null);
   const [energy, setEnergy] = useState(initial?.energy ?? "");
   const [mood, setMood] = useState(initial?.mood ?? "");
   const [symptoms, setSymptoms] = useState<string[]>(initial?.symptoms ?? []);
   const [saving, setSaving] = useState(false);
+  const realStart = periodStart ? dateKey : periodStartFor(dateKey, starts.filter((d) => d !== dateKey));
+  const canEnd = !!realStart && !periodStart;
 
   async function save() {
     setSaving(true);
     const id = await uid();
+    const ended = canEnd && periodEnded;
     const { error } = await supabase.from("cycle_logs").upsert(
-      { user_id: id, log_date: dateKey, period_start: periodStart, energy: energy || null, mood: mood || null, symptoms },
+      { user_id: id, log_date: dateKey, period_start: periodStart, period_ended: ended, flow, energy: energy || null, mood: mood || null, symptoms },
       { onConflict: "user_id,log_date" },
     );
+    if (!error && ended && realStart) {
+      const clear = endsToClear(realStart, dateKey, starts, ends);
+      if (clear.length) await supabase.from("cycle_logs").update({ period_ended: false }).eq("user_id", id).in("log_date", clear);
+    }
     if (!error && periodStart) {
       const { data: cur } = await supabase.from("cycle_settings").select("*").eq("user_id", id).maybeSingle();
       if (!cur?.last_period_start || cur.last_period_start < dateKey) {
@@ -202,6 +213,28 @@ function LogForm({ dateKey, initial, onSaved }: { dateKey: string; initial?: Log
         <span className="font-semibold">Minha menstruação começou neste dia</span>
         <input type="checkbox" checked={periodStart} onChange={(e) => setPeriodStart(e.target.checked)} className="h-5 w-5 accent-[var(--primary)]" />
       </label>
+      {canEnd ? (
+        <div>
+          <label className="flex items-center justify-between rounded-2xl bg-sage px-4 py-3">
+            <span className="font-semibold">Minha menstruação terminou neste dia</span>
+            <input type="checkbox" checked={periodEnded} onChange={(e) => setPeriodEnded(e.target.checked)} className="h-5 w-5 accent-[var(--primary)]" />
+          </label>
+          {periodEnded && realStart && (
+            <p className="mt-2 text-xs text-foreground/70">
+              Duração observada: {observedLength(realStart, dateKey)} dias (início em {realStart.split("-").reverse().join("/")}). Se a data estiver errada, desmarque aqui e marque o dia certo.
+            </p>
+          )}
+        </div>
+      ) : !periodStart && (
+        <p className="rounded-2xl bg-background px-4 py-3 text-xs text-foreground/70">
+          Para registrar o fim da menstruação, primeiro marque o dia em que ela começou.
+        </p>
+      )}
+      <div>
+        <p className="text-sm font-semibold">Fluxo menstrual</p>
+        <p className="mb-2 text-xs text-foreground/60">Qual foi a intensidade do seu fluxo hoje? Toque de novo para remover.</p>
+        <div className="flex flex-wrap gap-2">{FLOW_LEVELS.map((f) => <button key={f} onClick={() => setFlow(toggleFlow(flow, f))} className={chip(flow === f)}>{f}</button>)}</div>
+      </div>
       <div>
         <p className="mb-2 text-sm font-semibold">Energia</p>
         <div className="flex flex-wrap gap-2">{ENERGY.map((e) => <button key={e} onClick={() => setEnergy(e)} className={chip(energy === e)}>{e}</button>)}</div>
