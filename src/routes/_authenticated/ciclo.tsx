@@ -140,6 +140,8 @@ function CicloView() {
           key={selKey}
           dateKey={selKey}
           initial={selLog}
+          starts={logs.filter((l) => l.period_start).map((l) => l.log_date)}
+          ends={logs.filter((l) => l.period_ended).map((l) => l.log_date)}
           onSaved={() => invalidate("cycle_logs", "cycle")}
         />
       )}
@@ -147,22 +149,31 @@ function CicloView() {
   );
 }
 
-type Log = { period_start: boolean; energy: string | null; mood: string | null; symptoms: string[] };
+type Log = { period_start: boolean; period_ended: boolean; flow: string | null; energy: string | null; mood: string | null; symptoms: string[] };
 
-function LogForm({ dateKey, initial, onSaved }: { dateKey: string; initial?: Log | undefined; onSaved: () => void }) {
+function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string; initial?: Log | undefined; starts: string[]; ends: string[]; onSaved: () => void }) {
   const [periodStart, setPeriodStart] = useState(initial?.period_start ?? false);
+  const [periodEnded, setPeriodEnded] = useState(initial?.period_ended ?? false);
+  const [flow, setFlow] = useState<string | null>(initial?.flow ?? null);
   const [energy, setEnergy] = useState(initial?.energy ?? "");
   const [mood, setMood] = useState(initial?.mood ?? "");
   const [symptoms, setSymptoms] = useState<string[]>(initial?.symptoms ?? []);
   const [saving, setSaving] = useState(false);
+  const realStart = periodStart ? dateKey : periodStartFor(dateKey, starts.filter((d) => d !== dateKey));
+  const canEnd = !!realStart && !periodStart;
 
   async function save() {
     setSaving(true);
     const id = await uid();
+    const ended = canEnd && periodEnded;
     const { error } = await supabase.from("cycle_logs").upsert(
-      { user_id: id, log_date: dateKey, period_start: periodStart, energy: energy || null, mood: mood || null, symptoms },
+      { user_id: id, log_date: dateKey, period_start: periodStart, period_ended: ended, flow, energy: energy || null, mood: mood || null, symptoms },
       { onConflict: "user_id,log_date" },
     );
+    if (!error && ended && realStart) {
+      const clear = endsToClear(realStart, dateKey, starts, ends);
+      if (clear.length) await supabase.from("cycle_logs").update({ period_ended: false }).eq("user_id", id).in("log_date", clear);
+    }
     if (!error && periodStart) {
       const { data: cur } = await supabase.from("cycle_settings").select("*").eq("user_id", id).maybeSingle();
       if (!cur?.last_period_start || cur.last_period_start < dateKey) {
