@@ -160,6 +160,7 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
   const [symptoms, setSymptoms] = useState<string[]>(initial?.symptoms ?? []);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(!initial);
+  const [hasSaved, setHasSaved] = useState(!!initial);
   const realStart = periodStart ? dateKey : periodStartFor(dateKey, starts.filter((d) => d !== dateKey));
   const canEnd = !!realStart && !periodStart;
 
@@ -202,6 +203,7 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
     setSaving(false);
     if (error) { toast.error("Não foi possível salvar."); return; }
     toast.success("Registro salvo 💛");
+    setHasSaved(true);
     setIsEditing(false);
     onSaved();
   }
@@ -263,10 +265,10 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
         </div>
       </div>
       <button disabled={saving} onClick={() => {
-        if (initial && !isEditing) { setIsEditing(true); return; }
+        if (hasSaved && !isEditing) { setIsEditing(true); return; }
         void save();
-      }} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3.5 font-bold transition disabled:opacity-60 ${initial && !isEditing ? "bg-ink text-ink-foreground" : "bg-primary text-primary-foreground"}`}>
-        {saving ? "Salvando..." : initial && !isEditing ? <><Pencil className="h-4 w-4" /> Editar registro</> : <><Check className="h-4 w-4" /> {initial ? "Salvar alterações" : "Salvar registro"}</>}
+      }} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3.5 font-bold transition disabled:opacity-60 ${hasSaved && !isEditing ? "bg-ink text-ink-foreground" : "bg-primary text-primary-foreground"}`}>
+        {saving ? "Salvando..." : hasSaved && !isEditing ? <><Pencil className="h-4 w-4" /> Editar registro</> : <><Check className="h-4 w-4" /> {hasSaved ? "Salvar alterações" : "Salvar registro"}</>}
       </button>
           </div>
         </div>
