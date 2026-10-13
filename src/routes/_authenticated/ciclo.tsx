@@ -219,7 +219,7 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
         </div>
         {!isEditing && <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-ink-foreground"><Check className="h-4 w-4" /></span>}
       </div>
-      {!isEditing && canEnd && (
+      {!isEditing && canEnd && !periodEnded && (
         <button
           type="button"
           onClick={() => { setPeriodEnded(true); setIsEditing(true); }}
