@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Play, Clock, Sparkles, Heart, Check } from "lucide-react";
+import { Play, Clock, Sparkles, Heart, Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { cycleDay, fmtDate, MOTIVATION, PHASES, PHASE_BG, phaseForDay } from "@/lib/cycle";
@@ -31,11 +31,13 @@ function Inicio() {
   const [mood, setMood] = useState<string>("");
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [savingCheckIn, setSavingCheckIn] = useState(false);
+  const [isEditingCheckIn, setIsEditingCheckIn] = useState(true);
 
   useEffect(() => {
     setEnergy(todayLog?.energy ?? "");
     setMood(todayLog?.mood ?? "");
     setSymptoms(todayLog?.symptoms ?? []);
+    if (todayLog) setIsEditingCheckIn(false);
   }, [todayLog?.log_date, todayLog?.energy, todayLog?.mood, todayLog?.symptoms?.join("|")]);
 
   if (!cycle || !profile) return <AppShell><div className="h-40 animate-pulse rounded-3xl bg-surface" /></AppShell>;
@@ -74,8 +76,9 @@ function Inicio() {
 
   async function saveCheckIn() {
     setSavingCheckIn(true);
-    const id = await uid();
-    const { error } = await supabase.from("cycle_logs").upsert({
+    try {
+      const id = await uid();
+      const { error } = await supabase.from("cycle_logs").upsert({
       user_id: id,
       log_date: todayKey,
       period_start: todayLog?.period_start ?? false,
@@ -84,14 +87,27 @@ function Inicio() {
       energy: energy || null,
       mood: mood || null,
       symptoms,
-    }, { onConflict: "user_id,log_date" });
-    setSavingCheckIn(false);
-    if (error) {
+      }, { onConflict: "user_id,log_date" });
+      if (error) {
+        toast.error("Não foi possível salvar seu check-in. Tente novamente.");
+        return;
+      }
+      invalidate("cycle_logs");
+      setIsEditingCheckIn(false);
+      toast.success("Check-in salvo 💛");
+    } catch {
       toast.error("Não foi possível salvar seu check-in. Tente novamente.");
+    } finally {
+      setSavingCheckIn(false);
+    }
+  }
+
+  function handleCheckInButton() {
+    if (todayLog && !isEditingCheckIn) {
+      setIsEditingCheckIn(true);
       return;
     }
-    invalidate("cycle_logs");
-    toast.success("Check-in salvo 💛");
+    void saveCheckIn();
   }
 
   function toggleSymptom(value: string) {
@@ -135,18 +151,19 @@ function Inicio() {
         <p className="mt-1 text-sm text-foreground/70">Sua resposta ajuda a adaptar a sugestão. É rapidinho e só você vê.</p>
         <div className="mt-4">
           <p className="mb-2 text-sm font-semibold">Energia</p>
-          <div className="flex flex-wrap gap-2">{ENERGY.map((value) => <button key={value} onClick={() => setEnergy(energy === value ? "" : value)} className={chip(energy === value)}>{value}</button>)}</div>
+          <div className="flex flex-wrap gap-2">{ENERGY.map((value) => <button key={value} disabled={!isEditingCheckIn} onClick={() => setEnergy(energy === value ? "" : value)} className={`${chip(energy === value)} disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
         </div>
         <div className="mt-4">
           <p className="mb-2 text-sm font-semibold">Humor</p>
-          <div className="flex gap-2">{MOODS.map((value) => <button key={value} aria-label={`Humor ${value}`} onClick={() => setMood(mood === value ? "" : value)} className={`${chip(mood === value)} text-xl`}>{value}</button>)}</div>
+          <div className="flex gap-2">{MOODS.map((value) => <button key={value} disabled={!isEditingCheckIn} aria-label={`Humor ${value}`} onClick={() => setMood(mood === value ? "" : value)} className={`${chip(mood === value)} text-xl disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
         </div>
         <div className="mt-4">
           <p className="mb-2 text-sm font-semibold">Algum sintoma hoje?</p>
-          <div className="flex flex-wrap gap-2">{SYMPTOMS.map((value) => <button key={value} onClick={() => toggleSymptom(value)} className={chip(symptoms.includes(value))}>{value}</button>)}</div>
+          <div className="flex flex-wrap gap-2">{SYMPTOMS.map((value) => <button key={value} disabled={!isEditingCheckIn} onClick={() => toggleSymptom(value)} className={`${chip(symptoms.includes(value))} disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
         </div>
-        <button disabled={savingCheckIn} onClick={saveCheckIn} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 font-bold text-primary-foreground disabled:opacity-60">
-          <Check className="h-4 w-4" /> {savingCheckIn ? "Salvando..." : todayLog ? "Atualizar check-in" : "Salvar check-in"}
+        <button disabled={savingCheckIn} onClick={handleCheckInButton} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3.5 font-bold transition disabled:opacity-60 ${todayLog && !isEditingCheckIn ? "bg-ink text-ink-foreground" : "bg-primary text-primary-foreground"}`}>
+          {todayLog && !isEditingCheckIn ? <Pencil className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          {savingCheckIn ? "Salvando..." : todayLog && !isEditingCheckIn ? "Editar registro" : todayLog ? "Salvar alterações" : "Salvar registro"}
         </button>
       </section>
 
