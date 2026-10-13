@@ -219,6 +219,16 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
         </div>
         {!isEditing && <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-ink-foreground"><Check className="h-4 w-4" /></span>}
       </div>
+      {!isEditing && canEnd && (
+        <button
+          type="button"
+          onClick={() => { setPeriodEnded(true); setIsEditing(true); }}
+          className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl bg-sage px-4 py-3 text-left font-semibold text-ink"
+        >
+          <span>Minha menstruação terminou neste dia</span>
+          <span className="shrink-0 rounded-full bg-background px-3 py-1 text-xs font-bold">Registrar</span>
+        </button>
+      )}
       <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${isEditing ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
         <div className="min-h-0 overflow-hidden">
           <div className="mt-4 space-y-4">
