@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Play, Clock, Sparkles, Heart, Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { cycleDay, fmtDate, MOTIVATION, PHASES, PHASE_BG, phaseForDay } from "@/lib/cycle";
+import { cycleDay, fmtDate, MOTIVATION, PHASES, PHASE_BG, phaseForDay, type Phase } from "@/lib/cycle";
 import { uid, useCycle, useCycleLogs, useInvalidate, useProfile, useSessions } from "@/lib/data";
 import { supabase } from "@/integrations/supabase/client";
 import { describeWeek, LIGHT_WALK_WEEK, programProgress, totalMinutes } from "@/lib/program";
@@ -17,7 +17,52 @@ export const Route = createFileRoute("/_authenticated/inicio")({
 
 const ENERGY = ["Baixa", "Média", "Alta"] as const;
 const MOODS = ["😔", "😐", "🙂", "😄"] as const;
+
 const SYMPTOMS = ["Cólica", "Dor de cabeça", "Inchaço", "Cansaço", "Sensibilidade", "Nenhum"] as const;
+
+function getRecipeSuggestions(phase: Phase | null, seed: number, pregnancyOnly = false) {
+  const candidates = RECIPES.filter((recipe) => !pregnancyOnly || recipe.pregnancy);
+  const matching = phase ? candidates.filter((recipe) => recipe.phases.includes(phase)) : candidates;
+  const remaining = phase ? candidates.filter((recipe) => !recipe.phases.includes(phase)) : [];
+
+  const rotate = <T,>(items: T[]) => {
+    if (!items.length) return items;
+    const offset = seed % items.length;
+    return [...items.slice(offset), ...items.slice(0, offset)];
+  };
+
+  return [...rotate(matching), ...rotate(remaining)].slice(0, 5);
+}
+
+function RecipeCarousel({ recipes, title, subtitle }: { recipes: typeof RECIPES; title: string; subtitle: string }) {
+  return (
+    <section className="mt-5">
+      <div className="mb-3 flex items-end justify-between gap-3 px-1">
+        <div>
+          <h2 className="font-display text-xl font-bold text-ink">{title}</h2>
+          <p className="mt-1 text-xs text-foreground/60">{subtitle}</p>
+        </div>
+        <Link to="/receitas" className="shrink-0 text-sm font-bold text-bronze underline">Ver todas</Link>
+      </div>
+      <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-3">
+        {recipes.map((recipe) => (
+          <Link
+            key={recipe.id}
+            to="/receitas"
+            className="w-40 shrink-0 snap-start overflow-hidden rounded-3xl bg-surface transition active:scale-[0.98]"
+          >
+            <img src={recipe.image} alt={recipe.title} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+            <div className="p-3">
+              <p className="text-[11px] font-semibold text-bronze">{recipe.moment === "pre" ? "Pré-treino" : "Pós-treino"}</p>
+              <p className="mt-1 line-clamp-2 min-h-10 font-display text-sm font-bold leading-tight text-ink">{recipe.title}</p>
+              <p className="mt-2 flex items-center gap-1 text-xs text-foreground/60"><Clock className="h-3 w-3" /> {recipe.minutes} min</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function Inicio() {
   const { data: profile } = useProfile();
@@ -42,36 +87,29 @@ function Inicio() {
 
   if (!cycle || !profile) return <AppShell><div className="h-40 animate-pulse rounded-3xl bg-surface" /></AppShell>;
 
+  const day = cycle.isDemo ? null : cycleDay(new Date(), cycle.settings);
+  const phase = day == null ? null : phaseForDay(day, cycle.settings);
+  const info = phase ? PHASES[phase] : null;
+  const recipeSeed = Number(todayKey.replaceAll("-", ""));
+  const recipeSuggestions = getRecipeSuggestions(phase, recipeSeed, !!profile.pregnant);
+
   if (profile.pregnant && profile.due_date) {
-    const recipe = RECIPES.find((r) => r.pregnancy) ?? RECIPES[0]!;
     return (
       <AppShell title={`Oi, ${profile.display_name} 👋`}>
         <PregnancyStatus due={profile.due_date} />
         <PregnancyTip />
         <PregnancyWorkout due={profile.due_date} />
-        <Link to="/receitas" className="mt-4 grid grid-cols-[96px_minmax(0,1fr)] items-center gap-4 rounded-3xl bg-surface p-3">
-          <img src={recipe.image} alt={recipe.title} className="h-24 w-24 rounded-2xl object-cover" />
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-bronze">Receita para a gestação</p>
-            <p className="mt-1 font-display font-bold text-ink">{recipe.title}</p>
-            <p className="text-xs text-foreground/60">{recipe.minutes} min</p>
-          </div>
-        </Link>
+        <RecipeCarousel recipes={recipeSuggestions} title="Ideias para nutrir seu dia" subtitle="Sugestões para a gestação" />
         <PregnancyDisclaimer className="mt-4" />
       </AppShell>
     );
   }
-
-  const day = cycle.isDemo ? null : cycleDay(new Date(), cycle.settings);
-  const phase = day == null ? null : phaseForDay(day, cycle.settings);
-  const info = phase ? PHASES[phase] : null;
   const perWeek = profile.days_per_week ?? 3;
   const { current, nextSession } = programProgress(sessions, perWeek);
   const reportedSymptoms = symptoms.filter((s) => s !== "Nenhum");
   const lowEnergy = energy === "Baixa" || reportedSymptoms.some((s) => ["Cólica", "Dor de cabeça", "Cansaço"].includes(s));
   const hasReadinessCheckIn = !!energy || reportedSymptoms.length > 0;
   const light = lowEnergy || (!hasReadinessCheckIn && info?.workoutHint === "light");
-  const recipe = phase ? (RECIPES.find((r) => r.phases.includes(phase)) ?? RECIPES[0]!) : RECIPES[0]!;
   const quote = MOTIVATION[new Date().getDate() % MOTIVATION.length];
 
   async function saveCheckIn() {
@@ -218,14 +256,11 @@ function Inicio() {
         </div>
       </section>
 
-      <Link to="/receitas" className="mt-4 grid grid-cols-[96px_minmax(0,1fr)] items-center gap-4 rounded-3xl bg-surface p-3">
-        <img src={recipe.image} alt={recipe.title} className="h-24 w-24 rounded-2xl object-cover" />
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-bronze">{phase ? `Receita sugerida · ${recipe.moment === "pre" ? "pré-treino" : "pós-treino"}` : "Uma ideia para experimentar"}</p>
-          <p className="mt-1 font-display font-bold text-ink">{recipe.title}</p>
-          <p className="text-xs text-foreground/60">{recipe.minutes} min</p>
-        </div>
-      </Link>
+      <RecipeCarousel
+        recipes={recipeSuggestions}
+        title="Ideias para nutrir seu dia"
+        subtitle={phase ? `Sugestões para a fase ${info?.shortName ?? info?.name ?? "atual"}` : "Deslize para descobrir opções rápidas"}
+      />
 
       <p className="mt-6 rounded-3xl bg-sage p-5 text-center font-display text-lg font-semibold text-ink">“{quote}”</p>
     </AppShell>
