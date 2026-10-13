@@ -103,7 +103,7 @@ function Inicio() {
   }
 
   function handleCheckInButton() {
-    if (todayLog && !isEditingCheckIn) {
+    if (!isEditingCheckIn) {
       setIsEditingCheckIn(true);
       return;
     }
@@ -148,23 +148,43 @@ function Inicio() {
       <section className="mt-4 rounded-3xl bg-surface p-5">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-bronze"><Heart className="h-4 w-4" /> Check-in de hoje</p>
         <h2 className="mt-1 text-xl font-bold">Como você está se sentindo?</h2>
-        <p className="mt-1 text-sm text-foreground/70">Sua resposta ajuda a adaptar a sugestão. É rapidinho e só você vê.</p>
-        <div className="mt-4">
-          <p className="mb-2 text-sm font-semibold">Energia</p>
-          <div className="flex flex-wrap gap-2">{ENERGY.map((value) => <button key={value} disabled={!isEditingCheckIn} onClick={() => setEnergy(energy === value ? "" : value)} className={`${chip(energy === value)} disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
+        <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${isEditingCheckIn ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+          <div className="min-h-0 overflow-hidden">
+            <p className="mt-1 text-sm text-foreground/70">Sua resposta ajuda a adaptar a sugestão. É rapidinho e só você vê.</p>
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-semibold">Energia</p>
+              <div className="flex flex-wrap gap-2">{ENERGY.map((value) => <button key={value} disabled={!isEditingCheckIn} onClick={() => setEnergy(energy === value ? "" : value)} className={`${chip(energy === value)} disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
+            </div>
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-semibold">Humor</p>
+              <div className="flex gap-2">{MOODS.map((value) => <button key={value} disabled={!isEditingCheckIn} aria-label={`Humor ${value}`} onClick={() => setMood(mood === value ? "" : value)} className={`${chip(mood === value)} text-xl disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
+            </div>
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-semibold">Algum sintoma hoje?</p>
+              <div className="flex flex-wrap gap-2">{SYMPTOMS.map((value) => <button key={value} disabled={!isEditingCheckIn} onClick={() => toggleSymptom(value)} className={`${chip(symptoms.includes(value))} disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
+            </div>
+            <button disabled={savingCheckIn} onClick={handleCheckInButton} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 font-bold text-primary-foreground transition disabled:opacity-60">
+              <Check className="h-4 w-4" />
+              {savingCheckIn ? "Salvando..." : todayLog ? "Salvar alterações" : "Salvar registro"}
+            </button>
+          </div>
         </div>
-        <div className="mt-4">
-          <p className="mb-2 text-sm font-semibold">Humor</p>
-          <div className="flex gap-2">{MOODS.map((value) => <button key={value} disabled={!isEditingCheckIn} aria-label={`Humor ${value}`} onClick={() => setMood(mood === value ? "" : value)} className={`${chip(mood === value)} text-xl disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
-        </div>
-        <div className="mt-4">
-          <p className="mb-2 text-sm font-semibold">Algum sintoma hoje?</p>
-          <div className="flex flex-wrap gap-2">{SYMPTOMS.map((value) => <button key={value} disabled={!isEditingCheckIn} onClick={() => toggleSymptom(value)} className={`${chip(symptoms.includes(value))} disabled:cursor-default disabled:opacity-80`}>{value}</button>)}</div>
-        </div>
-        <button disabled={savingCheckIn} onClick={handleCheckInButton} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3.5 font-bold transition disabled:opacity-60 ${todayLog && !isEditingCheckIn ? "bg-ink text-ink-foreground" : "bg-primary text-primary-foreground"}`}>
-          {todayLog && !isEditingCheckIn ? <Pencil className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-          {savingCheckIn ? "Salvando..." : todayLog && !isEditingCheckIn ? "Editar registro" : todayLog ? "Salvar alterações" : "Salvar registro"}
-        </button>
+        {!isEditingCheckIn && (
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-ink-foreground"><Check className="h-4 w-4" /></span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Registro salvo para hoje</p>
+                <p className="truncate text-xs text-foreground/60">
+                  {[energy && `Energia ${energy.toLowerCase()}`, mood, symptoms.filter((s) => s !== "Nenhum").join(", ")].filter(Boolean).join(" · ") || "Check-in registrado"}
+                </p>
+              </div>
+            </div>
+            <button onClick={handleCheckInButton} className="flex shrink-0 items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-sm font-bold text-ink-foreground transition">
+              <Pencil className="h-4 w-4" /> Editar
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="mt-4 rounded-3xl bg-ink p-6 text-ink-foreground">
