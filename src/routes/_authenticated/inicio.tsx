@@ -259,7 +259,7 @@ function Inicio() {
       <RecipeCarousel
         recipes={recipeSuggestions}
         title="Ideias para nutrir seu dia"
-        subtitle={phase ? `Sugestões para a fase ${info?.shortName ?? info?.name ?? "atual"}` : "Deslize para descobrir opções rápidas"}
+        subtitle={phase ? `Sugestões para a fase ${info?.short ?? info?.name ?? "atual"}` : "Deslize para descobrir opções rápidas"}
       />
 
       <p className="mt-6 rounded-3xl bg-sage p-5 text-center font-display text-lg font-semibold text-ink">“{quote}”</p>
