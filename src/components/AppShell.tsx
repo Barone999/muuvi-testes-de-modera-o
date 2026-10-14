@@ -17,13 +17,24 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const touchStart = useRef<{ x: number; y: number; blocked: boolean } | null>(null);
   const activeIndex = NAV.findIndex(({ to }) => to === pathname);
+  const [pageDirection, setPageDirection] = useState<"left" | "right">(() => {
+    if (typeof window === "undefined" || activeIndex < 0) return "left";
+    const previous = Number(window.sessionStorage.getItem("muuvi:previous-nav-index"));
+    return Number.isInteger(previous) && previous >= 0 && previous !== activeIndex
+      ? (activeIndex > previous ? "left" : "right")
+      : "left";
+  });
   const previousIndex = useRef(activeIndex);
-  const [pageDirection, setPageDirection] = useState<"left" | "right">("left");
   useEffect(() => {
     if (activeIndex >= 0 && previousIndex.current >= 0 && activeIndex !== previousIndex.current) {
       setPageDirection(activeIndex > previousIndex.current ? "left" : "right");
     }
     previousIndex.current = activeIndex;
+  }, [activeIndex]);
+  useEffect(() => () => {
+    if (activeIndex >= 0 && typeof window !== "undefined") {
+      window.sessionStorage.setItem("muuvi:previous-nav-index", String(activeIndex));
+    }
   }, [activeIndex]);
   useEffect(() => {
     if (isSuccess && profile && !profile.onboarded) navigate({ to: "/onboarding", replace: true });
