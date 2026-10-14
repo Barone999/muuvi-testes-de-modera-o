@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -55,6 +55,7 @@ function CicloView() {
   const today = toDateOnly(new Date());
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState(today);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const workoutDays = useMemo(() => new Set(sessions.map((s) => fmtDate(new Date(s.completed_at)))), [sessions]);
   const logMap = useMemo(() => new Map(logs.map((l) => [l.log_date, l])), [logs]);
@@ -78,7 +79,25 @@ function CicloView() {
           Você está vendo um exemplo. Registre o início da sua menstruação abaixo para personalizar.
         </p>
       )}
-      <section className="rounded-3xl bg-surface p-4">
+      <section
+        className="touch-pan-y rounded-3xl bg-surface p-4"
+        onTouchStart={(e) => {
+          const touch = e.touches[0];
+          if (touch) touchStart.current = { x: touch.clientX, y: touch.clientY };
+        }}
+        onTouchEnd={(e) => {
+          const start = touchStart.current;
+          const touch = e.changedTouches[0];
+          touchStart.current = null;
+          if (!start || !touch) return;
+          const deltaX = touch.clientX - start.x;
+          const deltaY = touch.clientY - start.y;
+          if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY) * 1.3) return;
+          const direction = deltaX < 0 ? 1 : -1;
+          setMonth(new Date(month.getFullYear(), month.getMonth() + direction, 1));
+        }}
+        onTouchCancel={() => { touchStart.current = null; }}
+      >
         <div className="mb-3 flex items-center justify-between">
           <button aria-label="Mês anterior" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="grid h-9 w-9 place-items-center rounded-full bg-background">
             <ChevronLeft className="h-4 w-4" />
