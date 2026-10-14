@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, Footprints, CalendarHeart, Salad, Users, UserRound } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useProfile } from "@/lib/data";
 
 const NAV = [
@@ -17,6 +17,14 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const touchStart = useRef<{ x: number; y: number; blocked: boolean } | null>(null);
   const activeIndex = NAV.findIndex(({ to }) => to === pathname);
+  const previousIndex = useRef(activeIndex);
+  const [pageDirection, setPageDirection] = useState<"left" | "right">("left");
+  useEffect(() => {
+    if (activeIndex >= 0 && previousIndex.current >= 0 && activeIndex !== previousIndex.current) {
+      setPageDirection(activeIndex > previousIndex.current ? "left" : "right");
+    }
+    previousIndex.current = activeIndex;
+  }, [activeIndex]);
   useEffect(() => {
     if (isSuccess && profile && !profile.onboarded) navigate({ to: "/onboarding", replace: true });
   }, [isSuccess, profile, navigate]);
@@ -60,7 +68,9 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
         }}
         onTouchCancel={() => { touchStart.current = null; }}
       >
-        {children}
+        <div key={pathname} className={`page-transition page-transition-${pageDirection}`}>
+          {children}
+        </div>
       </main>
       <nav aria-label="Navegação principal" className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md px-4 pb-4">
         <div className="rounded-3xl bg-ink shadow-lg">
