@@ -80,6 +80,7 @@ function CicloView() {
         </p>
       )}
       <section
+        data-no-page-swipe
         className="touch-pan-y rounded-3xl bg-surface p-4"
         onTouchStart={(e) => {
           const touch = e.touches[0];
