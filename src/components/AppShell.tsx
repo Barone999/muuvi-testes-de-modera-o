@@ -16,7 +16,6 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   useEffect(() => {
-  useEffect(() => {
     if (isSuccess && profile && !profile.onboarded) navigate({ to: "/onboarding", replace: true });
   }, [isSuccess, profile, navigate]);
 
