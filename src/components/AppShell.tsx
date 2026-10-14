@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, Footprints, CalendarHeart, Salad, Users, UserRound } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useProfile } from "@/lib/data";
 
 const NAV = [
@@ -14,6 +14,9 @@ const NAV = [
 export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
   const { data: profile, isSuccess } = useProfile();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const touchStart = useRef<{ x: number; y: number; blocked: boolean } | null>(null);
+  const activeIndex = NAV.findIndex(({ to }) => to === pathname);
   useEffect(() => {
     if (isSuccess && profile && !profile.onboarded) navigate({ to: "/onboarding", replace: true });
   }, [isSuccess, profile, navigate]);
@@ -33,7 +36,32 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
           <UserRound className="h-5 w-5" />
         </Link>
       </header>
-      <main className="px-5">{children}</main>
+      <main
+        className="px-5"
+        onTouchStart={(e) => {
+          const target = e.target;
+          const blocked = target instanceof Element && !!target.closest(
+            'button, a, input, textarea, select, label, [role="button"], [data-no-page-swipe], .overflow-x-auto',
+          );
+          const touch = e.touches[0];
+          touchStart.current = touch ? { x: touch.clientX, y: touch.clientY, blocked } : null;
+        }}
+        onTouchEnd={(e) => {
+          const start = touchStart.current;
+          const touch = e.changedTouches[0];
+          touchStart.current = null;
+          if (!start || start.blocked || !touch || activeIndex < 0) return;
+          const deltaX = touch.clientX - start.x;
+          const deltaY = touch.clientY - start.y;
+          if (Math.abs(deltaX) < 70 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+          const nextIndex = activeIndex + (deltaX < 0 ? 1 : -1);
+          if (nextIndex < 0 || nextIndex >= NAV.length) return;
+          navigate({ to: NAV[nextIndex]!.to });
+        }}
+        onTouchCancel={() => { touchStart.current = null; }}
+      >
+        {children}
+      </main>
       <nav aria-label="Navegação principal" className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md px-4 pb-4">
         <div className="rounded-3xl bg-ink shadow-lg">
           <div className="grid grid-cols-5 px-1 py-2">
