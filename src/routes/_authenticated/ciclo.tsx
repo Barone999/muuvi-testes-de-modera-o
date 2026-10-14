@@ -55,7 +55,12 @@ function CicloView() {
   const today = toDateOnly(new Date());
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState(today);
+  const [monthDirection, setMonthDirection] = useState<"left" | "right">("left");
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const changeMonth = (direction: number) => {
+    setMonthDirection(direction > 0 ? "left" : "right");
+    setMonth((current) => new Date(current.getFullYear(), current.getMonth() + direction, 1));
+  };
 
   const workoutDays = useMemo(() => new Set(sessions.map((s) => fmtDate(new Date(s.completed_at)))), [sessions]);
   const logMap = useMemo(() => new Map(logs.map((l) => [l.log_date, l])), [logs]);
@@ -95,16 +100,17 @@ function CicloView() {
           const deltaY = touch.clientY - start.y;
           if (Math.abs(deltaX) < 50 || Math.abs(deltaX) < Math.abs(deltaY) * 1.3) return;
           const direction = deltaX < 0 ? 1 : -1;
-          setMonth(new Date(month.getFullYear(), month.getMonth() + direction, 1));
+          changeMonth(direction);
         }}
         onTouchCancel={() => { touchStart.current = null; }}
       >
+        <div key={`${month.getFullYear()}-${month.getMonth()}`} className={`calendar-month-transition calendar-month-transition-${monthDirection}`}>
         <div className="mb-3 flex items-center justify-between">
-          <button aria-label="Mês anterior" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="grid h-9 w-9 place-items-center rounded-full bg-background">
+          <button aria-label="Mês anterior" onClick={() => changeMonth(-1)} className="grid h-9 w-9 place-items-center rounded-full bg-background">
             <ChevronLeft className="h-4 w-4" />
           </button>
           <h2 className="text-lg font-bold">{MONTHS[month.getMonth()]} {month.getFullYear()}</h2>
-          <button aria-label="Próximo mês" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="grid h-9 w-9 place-items-center rounded-full bg-background">
+          <button aria-label="Próximo mês" onClick={() => changeMonth(1)} className="grid h-9 w-9 place-items-center rounded-full bg-background">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -142,6 +148,7 @@ function CicloView() {
           ))}
           <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-ink" />Treino feito</span>
           <span className="flex items-center gap-2 opacity-60">Dias claros = previsão</span>
+        </div>
         </div>
       </section>
 
