@@ -17,7 +17,36 @@ function usePosts() {
   return useQuery({
     queryKey: ["posts"],
     queryFn: async () => {
-      const { data: posts } = await supabase.from("posts").select("*").order("created_at", { ascending: false }).limit(50);
+      // Moderators can read hidden posts for review, so explicitly keep the public feed visible-only.
+      const { data: moderatedPosts, error: moderationFilterError } = await moderationDb
+        .from("posts")
+        .select("*")
+        .eq("moderation_status", "visible")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      let posts = moderatedPosts as Array<{
+        id: string; user_id: string; author_name: string; content: string;
+        created_at: string; image_path: string | null; image_url: string | null;
+      }> | null;
+
+      // Keep the community usable before the reviewed migration is deployed. Only fall back
+      // when the moderation column itself is missing; other errors must not bypass the filter.
+      if (
+        moderationFilterError &&
+        (moderationFilterError.code === "42703" ||
+          moderationFilterError.message?.includes("moderation_status"))
+      ) {
+        const fallback = await supabase
+          .from("posts")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (fallback.error) throw fallback.error;
+        posts = fallback.data;
+      } else if (moderationFilterError) {
+        throw moderationFilterError;
+      }
       const ids = (posts ?? []).map((p) => p.id);
       const [{ data: likes }, { data: comments }] = await Promise.all([
         supabase.from("post_likes").select("*").in("post_id", ids),
