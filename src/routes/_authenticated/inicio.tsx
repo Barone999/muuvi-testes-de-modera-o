@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { describeWeek, LIGHT_WALK_WEEK, programProgress, totalMinutes } from "@/lib/program";
 import { RECIPES } from "@/lib/recipes";
 import { PregnancyDisclaimer, PregnancyStatus, PregnancyTip, PregnancyWorkout } from "@/components/Pregnancy";
+import { PeriodReminder } from "@/components/PeriodReminder";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({ meta: [{ title: "Início — Muuvi" }, { name: "description", content: "Seu treino de hoje, no seu ritmo." }] }),
@@ -182,6 +183,8 @@ function Inicio() {
           <Link to="/ciclo" className="mt-3 inline-block text-xs font-bold text-ink underline">Conhecer o acompanhamento do ciclo</Link>
         </section>
       )}
+
+      <PeriodReminder />
 
       <section className="mt-4 rounded-3xl bg-surface p-5">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-bronze"><Heart className="h-4 w-4" /> Check-in de hoje</p>
