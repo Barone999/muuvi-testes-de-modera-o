@@ -53,6 +53,21 @@ function ModeracaoComunidade() {
     },
   });
 
+  // Keep this list independent from pending reports so reviewed posts remain recoverable.
+  const { data: hiddenPosts = [], isLoading: loadingHiddenPosts, error: hiddenPostsError } = useQuery({
+    queryKey: ["moderation-hidden-posts"],
+    enabled: !!membership,
+    queryFn: async () => {
+      const { data, error } = await moderationDb
+        .from("posts")
+        .select("*")
+        .neq("moderation_status", "visible")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ModeratedPostRow[];
+    },
+  });
+
   const { data: history = [] } = useQuery({
     queryKey: ["moderation-history"],
     enabled: !!membership,
@@ -95,6 +110,7 @@ function ModeracaoComunidade() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["moderation-reports"] }),
       queryClient.invalidateQueries({ queryKey: ["moderation-posts"] }),
+      queryClient.invalidateQueries({ queryKey: ["moderation-hidden-posts"] }),
       queryClient.invalidateQueries({ queryKey: ["moderation-history"] }),
       queryClient.invalidateQueries({ queryKey: ["posts"] }),
     ]);
@@ -146,8 +162,10 @@ function ModeracaoComunidade() {
 
       <section className="mt-8 space-y-3">
         <h2 className="text-lg font-bold">Publicações ocultas ou removidas</h2>
-        {posts.filter((post) => post.moderation_status !== "visible").length === 0 && <p className="rounded-3xl bg-surface p-4 text-sm text-foreground/60">Não há publicações ocultas ou removidas.</p>}
-        {posts.filter((post) => post.moderation_status !== "visible").map((post) => (
+        {loadingHiddenPosts && <p className="text-sm text-foreground/60">Carregando publicações ocultas…</p>}
+        {hiddenPostsError && <p className="rounded-2xl bg-destructive/10 p-3 text-sm">Não foi possível carregar as publicações ocultas ou removidas.</p>}
+        {!loadingHiddenPosts && !hiddenPostsError && hiddenPosts.length === 0 && <p className="rounded-3xl bg-surface p-4 text-sm text-foreground/60">Não há publicações ocultas ou removidas.</p>}
+        {hiddenPosts.map((post) => (
           <article key={post.id} className="space-y-2 rounded-3xl bg-surface p-4">
             <div className="flex items-center justify-between gap-3"><p className="font-semibold">{post.author_name}</p><span className="rounded-full bg-blush px-3 py-1 text-xs font-bold">{post.moderation_status === "hidden" ? "Oculta" : "Removida logicamente"}</span></div>
             <p className="whitespace-pre-line text-sm">{post.content}</p>
