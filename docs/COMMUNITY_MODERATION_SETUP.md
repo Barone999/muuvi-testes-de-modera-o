@@ -13,6 +13,7 @@
 - Expõe a RPC `moderate_community_post`, que verifica a autorização no servidor, aplica a ação e registra o motivo no histórico na mesma transação.
 - Protege os campos de moderação e revisão também por triggers de banco, pois `REVOKE` em nível de coluna não anula um eventual `UPDATE` concedido à tabela inteira.
 - Não apaga permanentemente publicações nem modifica tabelas de ciclo menstrual.
+- Remove a política de exclusão direta de publicações por clientes comuns, evitando exclusões físicas acidentais e cascatas em comentários, curtidas e denúncias. A moderação usa remoção lógica.
 
 ## Configurar o primeiro administrador após aprovação da migração
 
@@ -46,7 +47,7 @@ $$;
 ## Antes de executar em produção
 
 - Revise o SQL da migração `20261015190000_add_community_moderation.sql`.
-- Confirme que os nomes das políticas existentes no projeto são os mesmos que a migração substitui (`read posts`, `read comments`, `read likes`).
+- Antes de produção, inventarie todas as políticas RLS de `posts`, `post_comments`, `post_likes` e `storage.objects` para o bucket `post-images`. Políticas permissivas adicionais podem se combinar por OR e anular parte das restrições desta migração. Confirme também se a política `delete own post` é a única política de exclusão física de publicações.
 - Faça primeiro um teste em um projeto/ambiente de teste com contas fictícias.
 - Após aplicar, teste explicitamente com duas contas diferentes: usuário comum e moderador.
 - Não use a conta da esposa nem altere registros de ciclo menstrual para testar a moderação.
