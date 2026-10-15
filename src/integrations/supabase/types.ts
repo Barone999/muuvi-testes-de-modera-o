@@ -80,6 +80,18 @@ export type Database = {
         }
         Relationships: []
       }
+      community_moderators: {
+        Row: { created_at: string; created_by: string | null; user_id: string }
+        Insert: { created_at?: string; created_by?: string | null; user_id: string }
+        Update: { created_at?: string; created_by?: string | null; user_id?: string }
+        Relationships: []
+      }
+      moderation_actions: {
+        Row: { action: string; created_at: string; id: string; moderator_id: string; new_status: string | null; post_id: string; previous_status: string | null; reason: string }
+        Insert: { action: string; created_at?: string; id?: string; moderator_id: string; new_status?: string | null; post_id: string; previous_status?: string | null; reason: string }
+        Update: { action?: string; created_at?: string; id?: string; moderator_id?: string; new_status?: string | null; post_id?: string; previous_status?: string | null; reason?: string }
+        Relationships: [{ foreignKeyName: "moderation_actions_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] }]
+      }
       post_comments: {
         Row: {
           author_name: string
@@ -144,6 +156,9 @@ export type Database = {
           id: string
           post_id: string
           reason: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           user_id: string
         }
         Insert: {
@@ -151,6 +166,9 @@ export type Database = {
           id?: string
           post_id: string
           reason?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           user_id: string
         }
         Update: {
@@ -158,6 +176,9 @@ export type Database = {
           id?: string
           post_id?: string
           reason?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           user_id?: string
         }
         Relationships: [
@@ -178,6 +199,9 @@ export type Database = {
           id: string
           image_path: string | null
           image_url: string | null
+          moderation_status: string
+          moderated_at: string | null
+          moderated_by: string | null
           user_id: string
         }
         Insert: {
@@ -187,6 +211,9 @@ export type Database = {
           id?: string
           image_path?: string | null
           image_url?: string | null
+          moderation_status?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
           user_id: string
         }
         Update: {
@@ -196,6 +223,9 @@ export type Database = {
           id?: string
           image_path?: string | null
           image_url?: string | null
+          moderation_status?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
           user_id?: string
         }
         Relationships: []
@@ -289,7 +319,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      moderate_community_post: {
+        Args: { p_action: string; p_post_id: string; p_reason: string }
+        Returns: Database["public"]["Tables"]["posts"]["Row"]
+      }
     }
     Enums: {
       [_ in never]: never
