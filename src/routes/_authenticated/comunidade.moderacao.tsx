@@ -138,6 +138,24 @@ function ModeracaoComunidade() {
       </section>
 
       <section className="mt-8 space-y-3">
+        <h2 className="text-lg font-bold">Publicações ocultas ou removidas</h2>
+        {posts.filter((post) => post.moderation_status !== "visible").length === 0 && <p className="rounded-3xl bg-surface p-4 text-sm text-foreground/60">Não há publicações ocultas ou removidas.</p>}
+        {posts.filter((post) => post.moderation_status !== "visible").map((post) => (
+          <article key={post.id} className="space-y-2 rounded-3xl bg-surface p-4">
+            <div className="flex items-center justify-between gap-3"><p className="font-semibold">{post.author_name}</p><span className="rounded-full bg-blush px-3 py-1 text-xs font-bold">{post.moderation_status === "hidden" ? "Oculta" : "Removida logicamente"}</span></div>
+            <p className="whitespace-pre-line text-sm">{post.content}</p>
+            <label className="block text-sm font-semibold">Motivo para a próxima ação
+              <textarea value={reasons[post.id] ?? ""} onChange={(e) => setReasons((prev) => ({ ...prev, [post.id]: e.target.value }))} rows={2} maxLength={1000} placeholder="Informe o motivo…" className="mt-1 w-full rounded-2xl border border-border bg-background p-3 font-normal outline-none focus:ring-2 focus:ring-ring" />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button disabled={busy === post.id} onClick={() => act(post.id, "restore")} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-semibold disabled:opacity-50"><Eye className="h-4 w-4" /> Restaurar</button>
+              {post.moderation_status === "hidden" && <button disabled={busy === post.id} onClick={() => act(post.id, "remove")} className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-50"><Trash2 className="h-4 w-4" /> Remover logicamente</button>}
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="mt-8 space-y-3">
         <h2 className="flex items-center gap-2 text-lg font-bold"><History className="h-5 w-5" /> Histórico recente</h2>
         {history.length === 0 && <p className="rounded-3xl bg-surface p-4 text-sm text-foreground/60">As ações de moderação aparecerão aqui.</p>}
         {history.map((entry) => {
