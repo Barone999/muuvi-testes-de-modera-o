@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Check, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Pencil, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -138,6 +138,7 @@ function CicloView() {
                   </span>
                 )}
                 {logMap.get(key)?.period_start && <span className="absolute top-1 left-1 h-1.5 w-1.5 rounded-full bg-ink" />}
+                {logMap.get(key)?.sexual_activity === true && <Heart aria-label="Relação sexual registrada" className="absolute bottom-1 left-1 h-3 w-3 fill-current text-rose-500" />}
               </button>
             );
           })}
@@ -176,7 +177,7 @@ function CicloView() {
   );
 }
 
-type Log = { period_start: boolean; period_ended: boolean; flow: string | null; energy: string | null; mood: string | null; symptoms: string[] };
+type Log = { period_start: boolean; period_ended: boolean; flow: string | null; energy: string | null; mood: string | null; symptoms: string[]; sexual_activity: boolean | null };
 
 function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string; initial?: Log | undefined; starts: string[]; ends: string[]; onSaved: () => void }) {
   const [periodStart, setPeriodStart] = useState(initial?.period_start ?? false);
@@ -185,6 +186,7 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
   const [energy, setEnergy] = useState(initial?.energy ?? "");
   const [mood, setMood] = useState(initial?.mood ?? "");
   const [symptoms, setSymptoms] = useState<string[]>(initial?.symptoms ?? []);
+  const [sexualActivity, setSexualActivity] = useState<boolean | null>(initial?.sexual_activity ?? null);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(!initial);
   const [hasSaved, setHasSaved] = useState(!!initial);
@@ -196,7 +198,7 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
     const id = await uid();
     const ended = canEnd && periodEnded;
     const { error } = await supabase.from("cycle_logs").upsert(
-      { user_id: id, log_date: dateKey, period_start: periodStart, period_ended: ended, flow, energy: energy || null, mood: mood || null, symptoms },
+      { user_id: id, log_date: dateKey, period_start: periodStart, period_ended: ended, flow, energy: energy || null, mood: mood || null, symptoms, sexual_activity: sexualActivity },
       { onConflict: "user_id,log_date" },
     );
     if (!error && ended && realStart) {
@@ -302,6 +304,18 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
           {SYMPTOMS.map((x) => (
             <button key={x} disabled={!isEditing} onClick={() => setSymptoms(symptoms.includes(x) ? symptoms.filter((y) => y !== x) : [...symptoms, x])} className={`${chip(symptoms.includes(x))} disabled:cursor-default disabled:opacity-80`}>{x}</button>
           ))}
+        </div>
+      </div>
+      <div className="rounded-2xl bg-blush/60 p-4">
+        <div className="flex items-center gap-2">
+          <Heart className="h-4 w-4 text-rose-500" />
+          <p className="text-sm font-semibold">Relação sexual</p>
+        </div>
+        <p className="mb-3 mt-1 text-xs text-foreground/60">Registre se houve relação neste dia. Você também pode preencher ou corrigir datas anteriores.</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" disabled={!isEditing} onClick={() => setSexualActivity(true)} className={`${chip(sexualActivity === true)} disabled:cursor-default disabled:opacity-80`}>Sim</button>
+          <button type="button" disabled={!isEditing} onClick={() => setSexualActivity(false)} className={`${chip(sexualActivity === false)} disabled:cursor-default disabled:opacity-80`}>Não</button>
+          <button type="button" disabled={!isEditing} onClick={() => setSexualActivity(null)} className={`${chip(sexualActivity === null)} disabled:cursor-default disabled:opacity-80`}>Não registrado</button>
         </div>
       </div>
       <button disabled={saving} onClick={() => {
