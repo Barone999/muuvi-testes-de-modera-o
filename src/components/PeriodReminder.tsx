@@ -28,6 +28,8 @@ export function PeriodReminder() {
   const elapsedDays = observedLength(latestStart, todayKey);
 
   if (hasEnded || elapsedDays <= cycle.settings.period_length) return null;
+  const startKey: string = latestStart;
+  const cycleLength = cycle.settings.cycle_length;
 
   async function confirmOngoingPeriod() {
     setSaving(true);
@@ -35,8 +37,8 @@ export function PeriodReminder() {
       const id = await uid();
       const { error } = await supabase.from("cycle_settings").upsert({
         user_id: id,
-        last_period_start: latestStart,
-        cycle_length: cycle.settings.cycle_length,
+        last_period_start: startKey,
+        cycle_length: cycleLength,
         period_length: elapsedDays,
       });
       if (error) {
