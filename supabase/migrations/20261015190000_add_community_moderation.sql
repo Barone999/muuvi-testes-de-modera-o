@@ -223,6 +223,11 @@ $$;
 revoke all on function public.moderate_community_post(uuid, text, text) from public, anon;
 grant execute on function public.moderate_community_post(uuid, text, text) to authenticated;
 
+-- Explicit read grants for the moderator UI; row-level policies still restrict which rows are visible.
+grant select on public.community_moderators to authenticated;
+grant select on public.moderation_actions to authenticated;
+grant select on public.post_reports to authenticated;
+
 -- Do not grant client write access to moderator membership, moderation history, or moderation columns.
 revoke insert, update, delete on public.community_moderators from anon, authenticated;
 revoke insert, update, delete on public.moderation_actions from anon, authenticated;
