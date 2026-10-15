@@ -64,7 +64,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 begin
   if not exists (
     select 1 from public.community_moderators m where m.user_id = auth.uid()
@@ -87,7 +87,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.enforce_community_moderation_fields() from public, anon, authenticated;
 
