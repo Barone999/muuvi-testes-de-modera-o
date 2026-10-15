@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ArrowLeft, Eye, EyeOff, History, ShieldAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@/lib/data";
+import { moderationDb, type ModeratorRow, type PendingReportRow, type ModeratedPostRow, type ModerationActionRow } from "@/lib/moderation-db";
 
 export const Route = createFileRoute("/_authenticated/comunidade/moderacao")({
   head: () => ({ meta: [{ title: "Moderação — Muuvi" }] }),
@@ -24,9 +24,9 @@ function ModeracaoComunidade() {
     queryKey: ["community-moderator", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("community_moderators").select("user_id").eq("user_id", user!.id).maybeSingle();
+      const { data, error } = await moderationDb.from("community_moderators").select("user_id").eq("user_id", user!.id).maybeSingle();
       if (error) throw error;
-      return data;
+      return (data ?? null) as ModeratorRow | null;
     },
   });
 
@@ -34,9 +34,9 @@ function ModeracaoComunidade() {
     queryKey: ["moderation-reports"],
     enabled: !!membership,
     queryFn: async () => {
-      const { data, error } = await supabase.from("post_reports").select("*").eq("review_status", "pending").order("created_at", { ascending: true });
+      const { data, error } = await moderationDb.from("post_reports").select("*").eq("review_status", "pending").order("created_at", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as PendingReportRow[];
     },
   });
 
@@ -46,10 +46,10 @@ function ModeracaoComunidade() {
     queryKey: ["moderation-posts", reportedPostIds],
     enabled: !!membership,
     queryFn: async () => {
-      if (reportedPostIds.length === 0) return [];
-      const { data, error } = await supabase.from("posts").select("*").in("id", reportedPostIds);
+      if (reportedPostIds.length === 0) return [] as ModeratedPostRow[];
+      const { data, error } = await moderationDb.from("posts").select("*").in("id", reportedPostIds);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as ModeratedPostRow[];
     },
   });
 
@@ -57,9 +57,9 @@ function ModeracaoComunidade() {
     queryKey: ["moderation-history"],
     enabled: !!membership,
     queryFn: async () => {
-      const { data, error } = await supabase.from("moderation_actions").select("*").order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await moderationDb.from("moderation_actions").select("*").order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as ModerationActionRow[];
     },
   });
 
@@ -80,7 +80,7 @@ function ModeracaoComunidade() {
       return;
     }
     setBusy(postId);
-    const { error } = await supabase.rpc("moderate_community_post", {
+    const { error } = await moderationDb.rpc("moderate_community_post", {
       p_post_id: postId,
       p_action: action,
       p_reason: reason,

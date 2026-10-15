@@ -5,6 +5,7 @@ import { Heart, MessageCircle, Flag, ImagePlus, Send, X, ShieldCheck } from "luc
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
+import { moderationDb, type ModeratorRow } from "@/lib/moderation-db";
 import { uid, useInvalidate, useProfile, useUser } from "@/lib/data";
 
 export const Route = createFileRoute("/_authenticated/comunidade")({
@@ -50,9 +51,9 @@ function Comunidade() {
     queryKey: ["community-moderator", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("community_moderators").select("user_id").eq("user_id", user!.id).maybeSingle();
+      const { data, error } = await moderationDb.from("community_moderators").select("user_id").eq("user_id", user!.id).maybeSingle();
       if (error) throw error;
-      return data;
+      return (data ?? null) as ModeratorRow | null;
     },
   });
   const invalidate = useInvalidate();

@@ -14,12 +14,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedCicloRouteImport } from './routes/_authenticated/ciclo'
 import { Route as AuthenticatedComunidadeRouteImport } from './routes/_authenticated/comunidade'
-import { Route as AuthenticatedComunidadeModeracaoRouteImport } from './routes/_authenticated/comunidade.moderacao'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedReceitasRouteImport } from './routes/_authenticated/receitas'
 import { Route as AuthenticatedTreinosRouteImport } from './routes/_authenticated/treinos'
+import { Route as AuthenticatedComunidadeModeracaoRouteImport } from './routes/_authenticated/comunidade.moderacao'
 import { Route as AuthenticatedTreinoWeekSessionRouteImport } from './routes/_authenticated/treino.$week.$session'
 
 const IndexRoute = IndexRouteImport.update({
@@ -44,11 +44,6 @@ const AuthenticatedCicloRoute = AuthenticatedCicloRouteImport.update({
 const AuthenticatedComunidadeRoute = AuthenticatedComunidadeRouteImport.update({
   id: '/comunidade',
   path: '/comunidade',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedComunidadeModeracaoRoute = AuthenticatedComunidadeModeracaoRouteImport.update({
-  id: '/comunidade/moderacao',
-  path: '/comunidade/moderacao',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
@@ -76,6 +71,12 @@ const AuthenticatedTreinosRoute = AuthenticatedTreinosRouteImport.update({
   path: '/treinos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedComunidadeModeracaoRoute =
+  AuthenticatedComunidadeModeracaoRouteImport.update({
+    id: '/moderacao',
+    path: '/moderacao',
+    getParentRoute: () => AuthenticatedComunidadeRoute,
+  } as any)
 const AuthenticatedTreinoWeekSessionRoute =
   AuthenticatedTreinoWeekSessionRouteImport.update({
     id: '/treino/$week/$session',
@@ -87,25 +88,26 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ciclo': typeof AuthenticatedCicloRoute
-  '/comunidade': typeof AuthenticatedComunidadeRoute
-  '/comunidade/moderacao': typeof AuthenticatedComunidadeModeracaoRoute
+  '/comunidade': typeof AuthenticatedComunidadeRouteWithChildren
   '/inicio': typeof AuthenticatedInicioRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/receitas': typeof AuthenticatedReceitasRoute
   '/treinos': typeof AuthenticatedTreinosRoute
+  '/comunidade/moderacao': typeof AuthenticatedComunidadeModeracaoRoute
   '/treino/$week/$session': typeof AuthenticatedTreinoWeekSessionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ciclo': typeof AuthenticatedCicloRoute
-  '/comunidade': typeof AuthenticatedComunidadeRoute
+  '/comunidade': typeof AuthenticatedComunidadeRouteWithChildren
   '/inicio': typeof AuthenticatedInicioRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/receitas': typeof AuthenticatedReceitasRoute
   '/treinos': typeof AuthenticatedTreinosRoute
+  '/comunidade/moderacao': typeof AuthenticatedComunidadeModeracaoRoute
   '/treino/$week/$session': typeof AuthenticatedTreinoWeekSessionRoute
 }
 export interface FileRoutesById {
@@ -114,13 +116,13 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/ciclo': typeof AuthenticatedCicloRoute
-  '/_authenticated/comunidade': typeof AuthenticatedComunidadeRoute
-  '/_authenticated/comunidade/moderacao': typeof AuthenticatedComunidadeModeracaoRoute
+  '/_authenticated/comunidade': typeof AuthenticatedComunidadeRouteWithChildren
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/receitas': typeof AuthenticatedReceitasRoute
   '/_authenticated/treinos': typeof AuthenticatedTreinosRoute
+  '/_authenticated/comunidade/moderacao': typeof AuthenticatedComunidadeModeracaoRoute
   '/_authenticated/treino/$week/$session': typeof AuthenticatedTreinoWeekSessionRoute
 }
 export interface FileRouteTypes {
@@ -130,12 +132,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/ciclo'
     | '/comunidade'
-    | '/comunidade/moderacao'
     | '/inicio'
     | '/onboarding'
     | '/perfil'
     | '/receitas'
     | '/treinos'
+    | '/comunidade/moderacao'
     | '/treino/$week/$session'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -148,6 +150,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/receitas'
     | '/treinos'
+    | '/comunidade/moderacao'
     | '/treino/$week/$session'
   id:
     | '__root__'
@@ -156,12 +159,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/ciclo'
     | '/_authenticated/comunidade'
-    | '/_authenticated/comunidade/moderacao'
     | '/_authenticated/inicio'
     | '/_authenticated/onboarding'
     | '/_authenticated/perfil'
     | '/_authenticated/receitas'
     | '/_authenticated/treinos'
+    | '/_authenticated/comunidade/moderacao'
     | '/_authenticated/treino/$week/$session'
   fileRoutesById: FileRoutesById
 }
@@ -208,13 +211,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedComunidadeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/comunidade/moderacao': {
-      id: '/_authenticated/comunidade/moderacao'
-      path: '/comunidade/moderacao'
-      fullPath: '/comunidade/moderacao'
-      preLoaderRoute: typeof AuthenticatedComunidadeModeracaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/inicio': {
       id: '/_authenticated/inicio'
       path: '/inicio'
@@ -250,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTreinosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/comunidade/moderacao': {
+      id: '/_authenticated/comunidade/moderacao'
+      path: '/moderacao'
+      fullPath: '/comunidade/moderacao'
+      preLoaderRoute: typeof AuthenticatedComunidadeModeracaoRouteImport
+      parentRoute: typeof AuthenticatedComunidadeRoute
+    }
     '/_authenticated/treino/$week/$session': {
       id: '/_authenticated/treino/$week/$session'
       path: '/treino/$week/$session'
@@ -260,10 +263,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedComunidadeRouteChildren {
+  AuthenticatedComunidadeModeracaoRoute: typeof AuthenticatedComunidadeModeracaoRoute
+}
+
+const AuthenticatedComunidadeRouteChildren: AuthenticatedComunidadeRouteChildren =
+  {
+    AuthenticatedComunidadeModeracaoRoute:
+      AuthenticatedComunidadeModeracaoRoute,
+  }
+
+const AuthenticatedComunidadeRouteWithChildren =
+  AuthenticatedComunidadeRoute._addFileChildren(
+    AuthenticatedComunidadeRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCicloRoute: typeof AuthenticatedCicloRoute
-  AuthenticatedComunidadeRoute: typeof AuthenticatedComunidadeRoute
-  AuthenticatedComunidadeModeracaoRoute: typeof AuthenticatedComunidadeModeracaoRoute
+  AuthenticatedComunidadeRoute: typeof AuthenticatedComunidadeRouteWithChildren
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -274,8 +291,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCicloRoute: AuthenticatedCicloRoute,
-  AuthenticatedComunidadeRoute: AuthenticatedComunidadeRoute,
-  AuthenticatedComunidadeModeracaoRoute: AuthenticatedComunidadeModeracaoRoute,
+  AuthenticatedComunidadeRoute: AuthenticatedComunidadeRouteWithChildren,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
