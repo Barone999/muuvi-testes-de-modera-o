@@ -11,6 +11,7 @@
 - Restringe a leitura de denúncias e do histórico a moderadores.
 - Oculta publicações não visíveis e seus comentários/curtidas do restante da comunidade.
 - Expõe a RPC `moderate_community_post`, que verifica a autorização no servidor, aplica a ação e registra o motivo no histórico na mesma transação.
+- Protege os campos de moderação e revisão também por triggers de banco, pois `REVOKE` em nível de coluna não anula um eventual `UPDATE` concedido à tabela inteira.
 - Não apaga permanentemente publicações nem modifica tabelas de ciclo menstrual.
 
 ## Configurar o primeiro administrador após aprovação da migração
