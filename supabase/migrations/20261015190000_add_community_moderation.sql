@@ -124,6 +124,11 @@ create policy "read posts"
     or exists (select 1 from public.community_moderators m where m.user_id = auth.uid())
   );
 
+-- Preserve post records: remove the existing owner-delete policy so ordinary clients
+-- cannot hard-delete posts and cascade away comments, likes, reports, or audit history.
+-- Moderation removal is performed only through the logical status transition below.
+drop policy if exists "delete own post" on public.posts;
+
 -- Comments and likes on hidden/removed posts are visible only to moderators.
 drop policy if exists "read comments" on public.post_comments;
 create policy "read comments"
