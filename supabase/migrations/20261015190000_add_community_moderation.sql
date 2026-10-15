@@ -95,6 +95,53 @@ create policy "read likes"
     )
   );
 
+-- Prevent new comments/likes on hidden or removed content through direct API calls.
+drop policy if exists "own comment ins" on public.post_comments;
+create policy "own comment ins"
+  on public.post_comments for insert to authenticated
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.posts p
+      where p.id = post_comments.post_id
+        and (
+          p.moderation_status = 'visible'
+          or exists (select 1 from public.community_moderators m where m.user_id = auth.uid())
+        )
+    )
+  );
+
+drop policy if exists "own like ins" on public.post_likes;
+create policy "own like ins"
+  on public.post_likes for insert to authenticated
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.posts p
+      where p.id = post_likes.post_id
+        and (
+          p.moderation_status = 'visible'
+          or exists (select 1 from public.community_moderators m where m.user_id = auth.uid())
+        )
+    )
+  );
+
+-- Private image access follows the visibility of the post that references the object.
+drop policy if exists "post images read auth" on storage.objects;
+create policy "post images read auth"
+  on storage.objects for select to authenticated
+  using (
+    bucket_id = 'post-images'
+    and exists (
+      select 1 from public.posts p
+      where p.image_path = storage.objects.name
+        and (
+          p.moderation_status = 'visible'
+          or exists (select 1 from public.community_moderators m where m.user_id = auth.uid())
+        )
+    )
+  );
+
 -- Reports are private: only moderators may read them. Report creation remains own-user-only.
 drop policy if exists "moderators can read reports" on public.post_reports;
 create policy "moderators can read reports"
