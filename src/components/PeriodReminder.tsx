@@ -14,11 +14,11 @@ export function PeriodReminder() {
 
   if (!cycle || cycle.isDemo) return null;
 
-  const latestStart = logs
+  const starts = logs
     .filter((log) => log.period_start && log.log_date <= todayKey)
     .map((log) => log.log_date)
-    .sort()
-    .at(-1);
+    .sort();
+  const latestStart = starts[starts.length - 1];
 
   if (!latestStart) return null;
 
