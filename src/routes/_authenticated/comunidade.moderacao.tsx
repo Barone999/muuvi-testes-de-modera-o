@@ -40,11 +40,14 @@ function ModeracaoComunidade() {
     },
   });
 
+  const reportedPostIds = [...new Set(reports.map((report) => report.post_id))];
+
   const { data: posts = [] } = useQuery({
-    queryKey: ["moderation-posts"],
+    queryKey: ["moderation-posts", reportedPostIds],
     enabled: !!membership,
     queryFn: async () => {
-      const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false }).limit(200);
+      if (reportedPostIds.length === 0) return [];
+      const { data, error } = await supabase.from("posts").select("*").in("id", reportedPostIds);
       if (error) throw error;
       return data ?? [];
     },
