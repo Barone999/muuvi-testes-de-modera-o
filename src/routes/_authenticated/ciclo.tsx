@@ -148,6 +148,7 @@ function CicloView() {
             <span key={p} className="flex items-center gap-2"><span className={`h-3 w-3 rounded-full ${PHASE_BG[p]}`} />{PHASES[p].short}</span>
           ))}
           <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-ink" />Treino feito</span>
+          <span className="flex items-center gap-2"><Heart className="h-3 w-3 fill-current text-rose-500" />Relação sexual</span>
           <span className="flex items-center gap-2 opacity-60">Dias claros = previsão</span>
         </div>
         </div>
