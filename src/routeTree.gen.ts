@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedCicloRouteImport } from './routes/_authenticated/ciclo'
 import { Route as AuthenticatedComunidadeRouteImport } from './routes/_authenticated/comunidade'
+import { Route as AuthenticatedComunidadeModeracaoRouteImport } from './routes/_authenticated/comunidade.moderacao'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
@@ -43,6 +44,11 @@ const AuthenticatedCicloRoute = AuthenticatedCicloRouteImport.update({
 const AuthenticatedComunidadeRoute = AuthenticatedComunidadeRouteImport.update({
   id: '/comunidade',
   path: '/comunidade',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedComunidadeModeracaoRoute = AuthenticatedComunidadeModeracaoRouteImport.update({
+  id: '/comunidade/moderacao',
+  path: '/comunidade/moderacao',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/ciclo': typeof AuthenticatedCicloRoute
   '/comunidade': typeof AuthenticatedComunidadeRoute
+  '/comunidade/moderacao': typeof AuthenticatedComunidadeModeracaoRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -108,6 +115,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/ciclo': typeof AuthenticatedCicloRoute
   '/_authenticated/comunidade': typeof AuthenticatedComunidadeRoute
+  '/_authenticated/comunidade/moderacao': typeof AuthenticatedComunidadeModeracaoRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
@@ -122,6 +130,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/ciclo'
     | '/comunidade'
+    | '/comunidade/moderacao'
     | '/inicio'
     | '/onboarding'
     | '/perfil'
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/ciclo'
     | '/_authenticated/comunidade'
+    | '/_authenticated/comunidade/moderacao'
     | '/_authenticated/inicio'
     | '/_authenticated/onboarding'
     | '/_authenticated/perfil'
@@ -198,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedComunidadeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/comunidade/moderacao': {
+      id: '/_authenticated/comunidade/moderacao'
+      path: '/comunidade/moderacao'
+      fullPath: '/comunidade/moderacao'
+      preLoaderRoute: typeof AuthenticatedComunidadeModeracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inicio': {
       id: '/_authenticated/inicio'
       path: '/inicio'
@@ -246,6 +263,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCicloRoute: typeof AuthenticatedCicloRoute
   AuthenticatedComunidadeRoute: typeof AuthenticatedComunidadeRoute
+  AuthenticatedComunidadeModeracaoRoute: typeof AuthenticatedComunidadeModeracaoRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -257,6 +275,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCicloRoute: AuthenticatedCicloRoute,
   AuthenticatedComunidadeRoute: AuthenticatedComunidadeRoute,
+  AuthenticatedComunidadeModeracaoRoute: AuthenticatedComunidadeModeracaoRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
