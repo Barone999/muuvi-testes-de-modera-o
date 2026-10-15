@@ -25,6 +25,7 @@ export type Database = {
           period_ended: boolean
           period_start: boolean
           symptoms: string[]
+          sexual_activity: boolean | null
           user_id: string
         }
         Insert: {
@@ -37,6 +38,7 @@ export type Database = {
           period_ended?: boolean
           period_start?: boolean
           symptoms?: string[]
+          sexual_activity?: boolean | null
           user_id: string
         }
         Update: {
@@ -49,6 +51,7 @@ export type Database = {
           period_ended?: boolean
           period_start?: boolean
           symptoms?: string[]
+          sexual_activity?: boolean | null
           user_id?: string
         }
         Relationships: []
