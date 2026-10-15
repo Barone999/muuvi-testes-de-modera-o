@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Heart, MessageCircle, Flag, ImagePlus, Send, X } from "lucide-react";
+import { Heart, MessageCircle, Flag, ImagePlus, Send, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +46,15 @@ function Comunidade() {
   const { data: posts = [] } = usePosts();
   const { data: user } = useUser();
   const { data: profile } = useProfile();
+  const { data: moderator } = useQuery({
+    queryKey: ["community-moderator", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("community_moderators").select("user_id").eq("user_id", user!.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
   const invalidate = useInvalidate();
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -86,7 +95,10 @@ function Comunidade() {
 
   return (
     <AppShell title="Comunidade">
-      <p className="mb-4 text-foreground/70">Um espaço de apoio. Celebre cada passo — o seu e o das outras. 💛</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-foreground/70">Um espaço de apoio. Celebre cada passo — o seu e o das outras. 💛</p>
+        {moderator && <a href="/comunidade/moderacao" className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-semibold text-bronze"><ShieldCheck className="h-4 w-4" /> Moderação</a>}
+      </div>
       <section className="rounded-3xl bg-surface p-4">
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Conte como foi seu treino..." className="w-full resize-none bg-transparent outline-none placeholder:text-foreground/50" />
         {file && (
