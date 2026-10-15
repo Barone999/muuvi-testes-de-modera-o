@@ -57,6 +57,50 @@ create index if not exists post_reports_review_status_created_idx
 create index if not exists posts_moderation_status_created_idx
   on public.posts (moderation_status, created_at desc);
 
+-- Column-level REVOKE does not override a table-level UPDATE grant.
+-- Enforce protected moderation fields in triggers as defense in depth.
+create or replace function public.enforce_community_moderation_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  if not exists (
+    select 1 from public.community_moderators m where m.user_id = auth.uid()
+  ) then
+    if tg_table_name = 'posts' then
+      if new.moderation_status is distinct from old.moderation_status
+         or new.moderated_at is distinct from old.moderated_at
+         or new.moderated_by is distinct from old.moderated_by then
+        raise exception 'Campos de moderação só podem ser alterados pela equipe autorizada.'
+          using errcode = '42501';
+      end if;
+    elsif tg_table_name = 'post_reports' then
+      if new.review_status is distinct from old.review_status
+         or new.reviewed_at is distinct from old.reviewed_at
+         or new.reviewed_by is distinct from old.reviewed_by then
+        raise exception 'A análise de denúncias só pode ser alterada pela equipe autorizada.'
+          using errcode = '42501';
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$;
+
+revoke all on function public.enforce_community_moderation_fields() from public, anon, authenticated;
+
+drop trigger if exists enforce_posts_moderation_fields on public.posts;
+create trigger enforce_posts_moderation_fields
+  before update of moderation_status, moderated_at, moderated_by on public.posts
+  for each row execute function public.enforce_community_moderation_fields();
+
+drop trigger if exists enforce_reports_moderation_fields on public.post_reports;
+create trigger enforce_reports_moderation_fields
+  before update of review_status, reviewed_at, reviewed_by on public.post_reports
+  for each row execute function public.enforce_community_moderation_fields();
+
 -- Public community feed: visible posts only, unless the signed-in user is a moderator.
 drop policy if exists "read posts" on public.posts;
 create policy "read posts"
