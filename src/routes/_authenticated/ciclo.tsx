@@ -200,6 +200,9 @@ function LogForm({ dateKey, initial, starts, ends, onSaved }: { dateKey: string;
       { onConflict: "user_id,log_date" },
     );
     if (!error && ended && realStart) {
+      await supabase.from("cycle_settings").update({
+        period_length: observedLength(realStart, dateKey),
+      }).eq("user_id", id);
       const clear = endsToClear(realStart, dateKey, starts, ends);
       if (clear.length) await supabase.from("cycle_logs").update({ period_ended: false }).eq("user_id", id).in("log_date", clear);
     }
