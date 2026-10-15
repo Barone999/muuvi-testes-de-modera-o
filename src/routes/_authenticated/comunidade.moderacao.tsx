@@ -20,7 +20,7 @@ function ModeracaoComunidade() {
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
-  const { data: membership, isLoading: checkingAccess } = useQuery({
+  const { data: membership, isLoading: checkingAccess, error: membershipError } = useQuery({
     queryKey: ["community-moderator", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
@@ -97,8 +97,12 @@ function ModeracaoComunidade() {
     ]);
   }
 
-  if (checkingAccess || (!!user && membership === undefined && !reportsError)) {
+  if (checkingAccess || (!!user && membership === undefined && !membershipError)) {
     return <AppShell title="Moderação"><p className="p-4 text-sm text-foreground/60">Verificando acesso administrativo…</p></AppShell>;
+  }
+
+  if (membershipError) {
+    return <AppShell title="Moderação"><p className="rounded-2xl bg-destructive/10 p-4 text-sm">Não foi possível verificar a autorização. A migração pode ainda não ter sido aplicada.</p></AppShell>;
   }
 
   if (!membership) {
