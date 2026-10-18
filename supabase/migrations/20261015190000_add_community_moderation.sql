@@ -127,7 +127,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.enforce_community_moderation_fields() from public, anon, authenticated;
 
