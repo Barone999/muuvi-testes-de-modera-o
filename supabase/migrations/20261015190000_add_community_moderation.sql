@@ -333,7 +333,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 begin
   if auth.uid() is null or not exists (
     select 1 from public.community_admins a where a.user_id = auth.uid()
@@ -361,7 +361,7 @@ begin
     delete from public.community_moderators where user_id = p_user_id;
   end if;
 end;
-$;
+$$;
 
 revoke all on function public.set_community_moderator(uuid, boolean) from public, anon;
 grant execute on function public.set_community_moderator(uuid, boolean) to authenticated;
