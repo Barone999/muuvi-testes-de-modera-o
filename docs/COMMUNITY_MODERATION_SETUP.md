@@ -47,7 +47,7 @@ $$;
 ```
 
 4. Entre nessa conta no Muuvi e abra Comunidade. A entrada **Moderação** deve aparecer.
-5. A RPC `set_community_moderator(p_user_id, p_is_moderator)` permite que somente um administrador autenticado adicione/remova moderadores. Usuários comuns e moderadores não administradores devem receber erro de permissão. A administração de moderadores ainda deve ser testada diretamente pela RPC antes de ser usada em produção.
+5. Na tela **Comunidade → Moderação**, a seção **Equipe de moderação** aparece somente para a conta administradora e permite adicionar/remover moderadores informando o UUID da conta. A RPC `set_community_moderator(p_user_id, p_is_moderator)` valida a autorização novamente no banco; usuários comuns e moderadores não administradores devem receber erro de permissão. Confirme o fluxo com contas fictícias antes de produção.
 6. Confirme que uma conta comum não consegue abrir a fila nem executar `moderate_community_post`. A autorização é validada no banco; esconder o link não é a proteção.
 7. Teste ocultar, restaurar, remoção lógica e arquivamento de denúncias com publicações e contas fictícias. Verifique o histórico, incluindo `reports_affected`, e que a publicação removida pode ser restaurada por um moderador.
 
