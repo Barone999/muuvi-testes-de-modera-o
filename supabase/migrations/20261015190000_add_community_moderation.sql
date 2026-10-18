@@ -12,14 +12,10 @@ create table if not exists public.community_moderators (
 alter table public.community_moderators enable row level security;
 
 drop policy if exists "moderators can read own membership" on public.community_moderators;
-drop policy if exists "admins can read moderator roster" on public.community_moderators;
 create policy "moderators can read own membership"
   on public.community_moderators
   for select to authenticated
-  using (
-    user_id = auth.uid()
-    or exists (select 1 from public.community_admins a where a.user_id = auth.uid())
-  );
+  using (user_id = auth.uid());
 
 -- Administrators are a separate, higher-privilege set. Bootstrap the first admin
 -- manually using the reviewed setup instructions; never infer admin status from user input.
@@ -35,6 +31,14 @@ create policy "admins can read own membership"
   on public.community_admins
   for select to authenticated
   using (user_id = auth.uid());
+
+drop policy if exists "admins can read moderator roster" on public.community_moderators;
+create policy "admins can read moderator roster"
+  on public.community_moderators
+  for select to authenticated
+  using (exists (
+    select 1 from public.community_admins a where a.user_id = auth.uid()
+  ));
 
 create table if not exists public.moderation_actions (
   id uuid primary key default gen_random_uuid(),
