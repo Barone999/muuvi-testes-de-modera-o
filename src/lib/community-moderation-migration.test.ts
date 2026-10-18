@@ -15,6 +15,8 @@ describe("community moderation migration security contract", () => {
     expect(migration).toMatch(/revoke all on function public\.set_community_moderator\(uuid, boolean\) from public, anon/i);
     expect(migration).toMatch(/grant execute on function public\.set_community_moderator\(uuid, boolean\) to authenticated/i);
     expect(migration).toMatch(/revoke insert, update, delete on public\.community_moderators from anon, authenticated/i);
+    expect(migration).toMatch(/uma conta administradora não pode perder o acesso à moderação/i);
+    expect(migration).toMatch(/create policy "admins can read moderator roster"/i);
   });
 
   it("requires moderator membership for moderation actions", () => {
@@ -31,6 +33,11 @@ describe("community moderation migration security contract", () => {
 
   it("limits author-name resolution to inserts and relevant column updates", () => {
     expect(migration).toMatch(/before insert or update of user_id, author_name on public\.posts/i);
+  });
+
+  it("uses valid dollar-quoted function bodies and does not leave a single-dollar delimiter", () => {
+    expect(migration).toMatch(/create or replace function public\.set_community_moderator\([\s\S]*?as \$\$[\s\S]*?end;\s*\$\$;/i);
+    expect(migration).not.toMatch(/as \$\s*\n/);
   });
 
   it("does not silently seed an administrator with a placeholder identity", () => {
