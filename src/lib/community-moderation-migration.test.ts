@@ -48,6 +48,10 @@ describe("community moderation migration security contract", () => {
   it("uses valid dollar-quoted function bodies and does not leave a single-dollar delimiter", () => {
     expect(migration).toMatch(/create or replace function public\.set_community_moderator\([\s\S]*?as \$\$[\s\S]*?end;\s*\$\$;/i);
     expect(migration).not.toMatch(/as \$\s*\n/);
+    expect(migration).not.toMatch(/end;\s*\$;\s*\n/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\\.posts from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\\.post_reports from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\\.moderation_actions from public, anon, authenticated/i);
   });
 
   it("does not silently seed an administrator with a placeholder identity", () => {
