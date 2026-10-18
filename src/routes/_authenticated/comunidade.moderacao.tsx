@@ -54,7 +54,7 @@ function ModeracaoComunidade() {
 
   async function setModerator(userId: string, isModerator: boolean) {
     const normalizedId = userId.trim();
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedId)) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(normalizedId)) {
       toast.error("Informe um UUID válido da conta.");
       return;
     }
