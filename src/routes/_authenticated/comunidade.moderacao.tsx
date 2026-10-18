@@ -185,7 +185,7 @@ function ModeracaoComunidade() {
         {history.length === 0 && <p className="rounded-3xl bg-surface p-4 text-sm text-foreground/60">As ações de moderação aparecerão aqui.</p>}
         {history.map((entry) => {
           const post = postById.get(entry.post_id);
-          return <div key={entry.id} className="rounded-2xl bg-surface p-3"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">{({ hide: "Publicação ocultada", restore: "Publicação restaurada", remove: "Publicação removida logicamente", dismiss_reports: "Denúncias arquivadas" } as Record<string, string>)[entry.action] ?? entry.action}</p><span className="text-xs text-foreground/50">{new Date(entry.created_at).toLocaleString("pt-BR")}</span></div><p className="mt-1 text-sm text-foreground/70">{post?.content ?? "Publicação preservada no histórico"}</p><p className="mt-1 text-xs text-foreground/60">Motivo: {entry.reason}</p></div>;
+          return <div key={entry.id} className="rounded-2xl bg-surface p-3"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold">{({ hide: "Publicação ocultada", restore: "Publicação restaurada", remove: "Publicação removida logicamente", dismiss_reports: "Denúncias arquivadas" } as Record<string, string>)[entry.action] ?? entry.action}</p><span className="text-xs text-foreground/50">{new Date(entry.created_at).toLocaleString("pt-BR")}</span></div><p className="mt-1 text-sm text-foreground/70">{post?.content ?? "Publicação preservada no histórico"}</p><p className="mt-1 text-xs text-foreground/60">Motivo: {entry.reason}</p><p className="mt-1 text-xs text-foreground/60">Denúncias afetadas: {entry.reports_affected}</p></div>;
         })}
       </section>
     </AppShell>
