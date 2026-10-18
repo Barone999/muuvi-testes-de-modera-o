@@ -31,6 +31,8 @@ describe("community moderation migration security contract", () => {
     expect(migration).toMatch(/perform set_config\('muuvi\.moderation_rpc', 'off', true\)/i);
     expect(migration).toMatch(/revoke insert, update, delete on public\.community_admins from public, anon, authenticated/i);
     expect(migration).toMatch(/revoke insert, update, delete on public\.moderation_actions from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete on public\\.posts from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete on public\\.post_reports from public, anon, authenticated/i);
   });
 
   it("records how many pending reports each action affected", () => {
