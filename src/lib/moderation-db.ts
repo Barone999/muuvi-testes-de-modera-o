@@ -37,5 +37,6 @@ export type ModerationActionRow = {
   post_id: string;
   action: string;
   reason: string;
+  reports_affected: number;
   created_at: string;
 };
