@@ -1,41 +1,5 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1791582107006,
-      "tag": "0000_migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1791586002624,
-      "tag": "0001_pregnancy_mode",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1791625786153,
-      "tag": "0002_cycle_logs_flow_period_end",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1791925942413,
-      "tag": "0003_community_author_name",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1792098374571,
-      "tag": "0004_cycle_logs_sexual_activity",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }
