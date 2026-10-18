@@ -4,13 +4,14 @@
 
 ## O que a migração faz
 
-- Cria `community_moderators` para a lista de moderadores autorizados.
+- Cria `community_admins` para administradores e `community_moderators` para moderadores; são níveis distintos.
+- Expõe `set_community_moderator`, RPC que só aceita chamadas de um administrador autenticado, para adicionar/remover moderadores sem escrita direta nas tabelas de permissões.
 - Cria `moderation_actions` como histórico de auditoria, sem escrita direta pelo cliente.
 - Adiciona `moderation_status` às publicações (`visible`, `hidden`, `removed`) e campos de auditoria.
 - Adiciona estado de análise às denúncias (`pending`, `reviewed`, `dismissed`).
 - Restringe a leitura de denúncias e do histórico a moderadores.
 - Oculta publicações não visíveis e seus comentários/curtidas do restante da comunidade.
-- Expõe a RPC `moderate_community_post`, que verifica a autorização no servidor, aplica a ação e registra o motivo no histórico na mesma transação.
+- Expõe a RPC `moderate_community_post`, que verifica a autorização no servidor, aplica a ação e registra o motivo e a quantidade de denúncias afetadas no histórico na mesma transação.
 - Protege os campos de moderação e revisão também por triggers de banco, pois `REVOKE` em nível de coluna não anula um eventual `UPDATE` concedido à tabela inteira.
 - Não apaga permanentemente publicações nem modifica tabelas de ciclo menstrual.
 - Remove a política de exclusão direta de publicações por clientes comuns, evitando exclusões físicas acidentais e cascatas em comentários, curtidas e denúncias. A moderação usa remoção lógica.
@@ -19,9 +20,9 @@
 
 Faça isto apenas no SQL Editor autenticado do projeto Supabase/Lovable Cloud correto, por uma pessoa que já tenha acesso administrativo ao projeto. Não exponha credenciais de serviço no frontend.
 
-1. Crie/identifique a conta de usuário que será a primeira pessoa moderadora e faça login no Muuvi ao menos uma vez.
-2. Confirme o e-mail exato usado nessa conta.
-3. Depois de aprovada e aplicada a migração, execute o bloco abaixo substituindo `EMAIL_EXATO_DA_CONTA`. O bloco falha se não encontrar exatamente uma conta. Ele não cria usuários nem concede acesso a terceiros por cadastro público.
+1. Crie/identifique a conta que será a primeira administradora e faça login no Muuvi ao menos uma vez.
+2. No SQL Editor, confirme o e-mail exato dessa conta. Substitua `EMAIL_EXATO_DA_CONTA` pelo e-mail real. O bloco falha se não encontrar exatamente uma conta; ele não cria usuários nem concede acesso por cadastro público.
+3. Após a migração ser aprovada e aplicada, execute:
 
 ```sql
 do $$
@@ -33,6 +34,11 @@ begin
     from auth.users
    where lower(email) = lower('EMAIL_EXATO_DA_CONTA');
 
+  insert into public.community_admins (user_id, created_by)
+  values (v_user_id, null)
+  on conflict (user_id) do nothing;
+
+  -- O administrador inicial também recebe acesso à fila de moderação.
   insert into public.community_moderators (user_id, created_by)
   values (v_user_id, null)
   on conflict (user_id) do nothing;
@@ -41,8 +47,9 @@ $$;
 ```
 
 4. Entre nessa conta no Muuvi e abra Comunidade. A entrada **Moderação** deve aparecer.
-5. Confirme que uma conta comum não consegue abrir a fila nem executar `moderate_community_post`. A autorização é validada no banco; esconder o link não é a proteção.
-6. Teste ocultar, restaurar, remoção lógica e arquivamento de denúncias com publicações e contas fictícias. Verifique o histórico e que a publicação removida pode ser restaurada por um moderador.
+5. A RPC `set_community_moderator(p_user_id, p_is_moderator)` permite que somente um administrador autenticado adicione/remova moderadores. Usuários comuns e moderadores não administradores devem receber erro de permissão. A administração de moderadores ainda deve ser testada diretamente pela RPC antes de ser usada em produção.
+6. Confirme que uma conta comum não consegue abrir a fila nem executar `moderate_community_post`. A autorização é validada no banco; esconder o link não é a proteção.
+7. Teste ocultar, restaurar, remoção lógica e arquivamento de denúncias com publicações e contas fictícias. Verifique o histórico, incluindo `reports_affected`, e que a publicação removida pode ser restaurada por um moderador.
 
 ## Antes de executar em produção
 
