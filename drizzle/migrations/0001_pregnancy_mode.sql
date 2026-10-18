@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN pregnant boolean NOT NULL DEFAULT false, ADD COLUMN due_date date;
