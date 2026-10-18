@@ -372,11 +372,21 @@ grant select on public.community_admins to authenticated;
 grant select on public.moderation_actions to authenticated;
 grant select on public.post_reports to authenticated;
 
--- Do not grant client write access to moderator membership, moderation history, or moderation columns.
+-- Restrict client writes to role tables and audit history.
 revoke insert, update, delete on public.community_moderators from anon, authenticated;
 revoke insert, update, delete on public.community_admins from anon, authenticated;
 revoke insert, update, delete on public.moderation_actions from anon, authenticated;
-revoke update (moderation_status, moderated_at, moderated_by) on public.posts from anon, authenticated;
-revoke update (review_status, reviewed_at, reviewed_by) on public.post_reports from anon, authenticated;
+
+-- The Lovable Cloud project currently has broad table-level grants. Column-level
+-- REVOKE cannot override those grants, so revoke table-level INSERT/UPDATE first,
+-- then grant only the ordinary fields the client needs to create posts/reports.
+-- Moderation fields can then only be changed by the SECURITY DEFINER RPC owner.
+revoke insert, update on public.posts from anon, authenticated;
+grant insert (user_id, author_name, content, image_url, image_path) on public.posts to authenticated;
+
+revoke insert, update on public.post_reports from anon, authenticated;
+grant insert (post_id, user_id, reason) on public.post_reports to authenticated;
+
+-- No client write access to moderation/audit columns is granted.
 
 commit;
