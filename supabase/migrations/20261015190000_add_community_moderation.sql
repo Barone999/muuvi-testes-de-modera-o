@@ -82,17 +82,19 @@ create index if not exists posts_moderation_status_created_idx
   on public.posts (moderation_status, created_at desc);
 
 -- Column-level REVOKE does not override a table-level UPDATE grant.
--- Enforce protected moderation fields in triggers as defense in depth.
+-- Protected fields may only change while the validated SECURITY DEFINER RPC is running.
+-- PostgREST does not expose arbitrary SQL, so clients cannot set this transaction-local
+-- marker directly; the RPC turns it off again before returning.
 create or replace function public.enforce_community_moderation_fields()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $
+declare
+  v_rpc_context boolean := coalesce(current_setting('muuvi.moderation_rpc', true), '') = 'on';
 begin
-  if not exists (
-    select 1 from public.community_moderators m where m.user_id = auth.uid()
-  ) then
+  if not v_rpc_context then
     if tg_table_name = 'posts' then
       if tg_op = 'INSERT' then
         if new.moderation_status is distinct from 'visible'
@@ -104,7 +106,7 @@ begin
       elsif new.moderation_status is distinct from old.moderation_status
          or new.moderated_at is distinct from old.moderated_at
          or new.moderated_by is distinct from old.moderated_by then
-        raise exception 'Campos de moderação só podem ser alterados pela equipe autorizada.'
+        raise exception 'Campos de moderação só podem ser alterados pela RPC de moderação.'
           using errcode = '42501';
       end if;
     elsif tg_table_name = 'post_reports' then
@@ -118,14 +120,14 @@ begin
       elsif new.review_status is distinct from old.review_status
          or new.reviewed_at is distinct from old.reviewed_at
          or new.reviewed_by is distinct from old.reviewed_by then
-        raise exception 'A análise de denúncias só pode ser alterada pela equipe autorizada.'
+        raise exception 'A análise de denúncias só pode ser alterada pela RPC de moderação.'
           using errcode = '42501';
       end if;
     end if;
   end if;
   return new;
 end;
-$$;
+$;
 
 revoke all on function public.enforce_community_moderation_fields() from public, anon, authenticated;
 
@@ -287,6 +289,8 @@ begin
     else raise exception 'Ação de moderação inválida.';
   end case;
 
+  perform set_config('muuvi.moderation_rpc', 'on', true);
+
   if p_action <> 'dismiss_reports' then
     update public.posts
       set moderation_status = v_new_status,
@@ -317,6 +321,7 @@ begin
     set reports_affected = v_reports_affected
     where id = v_action_id;
 
+  perform set_config('muuvi.moderation_rpc', 'off', true);
   return v_post;
 end;
 $$;
@@ -373,9 +378,9 @@ grant select on public.moderation_actions to authenticated;
 grant select on public.post_reports to authenticated;
 
 -- Restrict client writes to role tables and audit history.
-revoke insert, update, delete on public.community_moderators from anon, authenticated;
-revoke insert, update, delete on public.community_admins from anon, authenticated;
-revoke insert, update, delete on public.moderation_actions from anon, authenticated;
+revoke insert, update, delete on public.community_moderators from public, anon, authenticated;
+revoke insert, update, delete on public.community_admins from public, anon, authenticated;
+revoke insert, update, delete on public.moderation_actions from public, anon, authenticated;
 
 -- The Lovable Cloud project currently has broad table-level grants. Column-level
 -- REVOKE cannot override those grants, so revoke table-level INSERT/UPDATE first,
