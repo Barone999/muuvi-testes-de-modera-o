@@ -17,6 +17,21 @@ create policy "moderators can read own membership"
   for select to authenticated
   using (user_id = auth.uid());
 
+-- Administrators are a separate, higher-privilege set. Bootstrap the first admin
+-- manually using the reviewed setup instructions; never infer admin status from user input.
+create table if not exists public.community_admins (
+  user_id uuid primary key references auth.users(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  created_by uuid null references auth.users(id) on delete set null
+);
+
+alter table public.community_admins enable row level security;
+drop policy if exists "admins can read own membership" on public.community_admins;
+create policy "admins can read own membership"
+  on public.community_admins
+  for select to authenticated
+  using (user_id = auth.uid());
+
 create table if not exists public.moderation_actions (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.posts(id) on delete restrict,
@@ -25,6 +40,7 @@ create table if not exists public.moderation_actions (
   previous_status text null,
   new_status text null check (new_status is null or new_status in ('visible', 'hidden', 'removed')),
   reason text not null check (length(trim(reason)) between 3 and 1000),
+  reports_affected integer not null default 0 check (reports_affected >= 0),
   created_at timestamptz not null default now()
 );
 
@@ -104,6 +120,13 @@ end;
 $$;
 
 revoke all on function public.enforce_community_moderation_fields() from public, anon, authenticated;
+
+-- Limit the author-name trigger to changes that actually need name resolution.
+-- This avoids unrelated moderation updates touching legacy posts with missing profiles.
+drop trigger if exists posts_set_author_name on public.posts;
+create trigger posts_set_author_name
+  before insert or update of user_id, author_name on public.posts
+  for each row execute function public.set_community_author_name();
 
 drop trigger if exists enforce_posts_moderation_fields on public.posts;
 create trigger enforce_posts_moderation_fields
@@ -229,6 +252,8 @@ declare
   v_post public.posts%rowtype;
   v_previous_status text;
   v_new_status text;
+  v_action_id uuid;
+  v_reports_affected integer := 0;
 begin
   if auth.uid() is null or not exists (
     select 1 from public.community_moderators m where m.user_id = auth.uid()
@@ -267,7 +292,7 @@ begin
     post_id, moderator_id, action, previous_status, new_status, reason
   ) values (
     p_post_id, auth.uid(), p_action, v_previous_status, v_new_status, trim(p_reason)
-  );
+  ) returning id into v_action_id;
 
   if p_action = 'dismiss_reports' then
     update public.post_reports
@@ -279,6 +304,11 @@ begin
       where post_id = p_post_id and review_status = 'pending';
   end if;
 
+  get diagnostics v_reports_affected = row_count;
+  update public.moderation_actions
+    set reports_affected = v_reports_affected
+    where id = v_action_id;
+
   return v_post;
 end;
 $$;
@@ -286,13 +316,50 @@ $$;
 revoke all on function public.moderate_community_post(uuid, text, text) from public, anon;
 grant execute on function public.moderate_community_post(uuid, text, text) to authenticated;
 
+-- Only an administrator can add or remove a moderator. No client can grant itself a role.
+create or replace function public.set_community_moderator(
+  p_user_id uuid,
+  p_is_moderator boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  if auth.uid() is null or not exists (
+    select 1 from public.community_admins a where a.user_id = auth.uid()
+  ) then
+    raise exception 'Somente administradores podem gerenciar moderadores.'
+      using errcode = '42501';
+  end if;
+
+  if p_user_id is null then
+    raise exception 'Usuário inválido.';
+  end if;
+
+  if p_is_moderator then
+    insert into public.community_moderators (user_id, created_by)
+    values (p_user_id, auth.uid())
+    on conflict (user_id) do nothing;
+  else
+    delete from public.community_moderators where user_id = p_user_id;
+  end if;
+end;
+$;
+
+revoke all on function public.set_community_moderator(uuid, boolean) from public, anon;
+grant execute on function public.set_community_moderator(uuid, boolean) to authenticated;
+
 -- Explicit read grants for the moderator UI; row-level policies still restrict which rows are visible.
 grant select on public.community_moderators to authenticated;
+grant select on public.community_admins to authenticated;
 grant select on public.moderation_actions to authenticated;
 grant select on public.post_reports to authenticated;
 
 -- Do not grant client write access to moderator membership, moderation history, or moderation columns.
 revoke insert, update, delete on public.community_moderators from anon, authenticated;
+revoke insert, update, delete on public.community_admins from anon, authenticated;
 revoke insert, update, delete on public.moderation_actions from anon, authenticated;
 revoke update (moderation_status, moderated_at, moderated_by) on public.posts from anon, authenticated;
 revoke update (review_status, reviewed_at, reviewed_by) on public.post_reports from anon, authenticated;
