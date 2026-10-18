@@ -14,7 +14,7 @@ describe("community moderation migration security contract", () => {
     expect(migration).toMatch(/from public\.community_admins a where a\.user_id = auth\.uid\(\)/i);
     expect(migration).toMatch(/revoke all on function public\.set_community_moderator\(uuid, boolean\) from public, anon/i);
     expect(migration).toMatch(/grant execute on function public\.set_community_moderator\(uuid, boolean\) to authenticated/i);
-    expect(migration).toMatch(/revoke insert, update, delete on public\.community_moderators from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.community_moderators from public, anon, authenticated/i);
     expect(migration).toMatch(/uma conta administradora não pode perder o acesso à moderação/i);
     expect(migration).toMatch(/create policy "admins can read moderator roster"/i);
   });
@@ -29,10 +29,10 @@ describe("community moderation migration security contract", () => {
     expect(migration).toMatch(/current_setting\('muuvi\.moderation_rpc', true\)/i);
     expect(migration).toMatch(/perform set_config\('muuvi\.moderation_rpc', 'on', true\)/i);
     expect(migration).toMatch(/perform set_config\('muuvi\.moderation_rpc', 'off', true\)/i);
-    expect(migration).toMatch(/revoke insert, update, delete on public\.community_admins from public, anon, authenticated/i);
-    expect(migration).toMatch(/revoke insert, update, delete on public\.moderation_actions from public, anon, authenticated/i);
-    expect(migration).toMatch(/revoke insert, update, delete on public\.posts from public, anon, authenticated/i);
-    expect(migration).toMatch(/revoke insert, update, delete on public\.post_reports from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.community_admins from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.moderation_actions from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.posts from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.post_reports from public, anon, authenticated/i);
   });
 
   it("records how many pending reports each action affected", () => {
@@ -49,9 +49,9 @@ describe("community moderation migration security contract", () => {
     expect(migration).toMatch(/create or replace function public\.set_community_moderator\([\s\S]*?as \$\$[\s\S]*?end;\s*\$\$;/i);
     expect(migration).not.toMatch(/as \$\s*\n/);
     expect(migration).not.toMatch(/end;\s*\$;\s*\n/i);
-    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\\.posts from public, anon, authenticated/i);
-    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\\.post_reports from public, anon, authenticated/i);
-    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\\.moderation_actions from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.posts from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.post_reports from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete, truncate, references, trigger on public\.moderation_actions from public, anon, authenticated/i);
   });
 
   it("does not silently seed an administrator with a placeholder identity", () => {
