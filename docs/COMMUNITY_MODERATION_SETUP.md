@@ -12,7 +12,7 @@
 - Restringe a leitura de denúncias e do histórico a moderadores.
 - Oculta publicações não visíveis e seus comentários/curtidas do restante da comunidade.
 - Expõe a RPC `moderate_community_post`, que verifica a autorização no servidor, aplica a ação e registra o motivo e a quantidade de denúncias afetadas no histórico na mesma transação.
-- Protege os campos de moderação e revisão também por triggers de banco, pois `REVOKE` em nível de coluna não anula um eventual `UPDATE` concedido à tabela inteira.
+- Protege os campos de moderação e revisão por triggers de banco: alterações protegidas só passam enquanto a RPC de moderação validada está executando, para impedir que até um moderador contorne o histórico. Como `REVOKE` em nível de coluna não anula um eventual `UPDATE` concedido à tabela inteira, a migração também revoga os privilégios de escrita amplos e concede somente os campos necessários para criar publicações e denúncias.
 - Não apaga permanentemente publicações nem modifica tabelas de ciclo menstrual.
 - Remove a política de exclusão direta de publicações por clientes comuns, evitando exclusões físicas acidentais e cascatas em comentários, curtidas e denúncias. A moderação usa remoção lógica.
 
