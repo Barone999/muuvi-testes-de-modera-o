@@ -25,6 +25,14 @@ describe("community moderation migration security contract", () => {
     expect(migration).toMatch(/grant execute on function public\.moderate_community_post\(uuid, text, text\) to authenticated/i);
   });
 
+  it("forces all protected field changes through the audited moderation RPC", () => {
+    expect(migration).toMatch(/current_setting\('muuvi\.moderation_rpc', true\)/i);
+    expect(migration).toMatch(/perform set_config\('muuvi\.moderation_rpc', 'on', true\)/i);
+    expect(migration).toMatch(/perform set_config\('muuvi\.moderation_rpc', 'off', true\)/i);
+    expect(migration).toMatch(/revoke insert, update, delete on public\.community_admins from public, anon, authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete on public\.moderation_actions from public, anon, authenticated/i);
+  });
+
   it("records how many pending reports each action affected", () => {
     expect(migration).toMatch(/reports_affected integer not null default 0/i);
     expect(migration).toMatch(/get diagnostics v_reports_affected = row_count/i);
