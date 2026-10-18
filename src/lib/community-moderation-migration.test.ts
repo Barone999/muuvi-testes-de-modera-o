@@ -1,0 +1,40 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const migration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20261015190000_add_community_moderation.sql"),
+  "utf8",
+);
+
+describe("community moderation migration security contract", () => {
+  it("separates administrators from moderators and gates moderator management", () => {
+    expect(migration).toMatch(/create table if not exists public\.community_admins/i);
+    expect(migration).toMatch(/create or replace function public\.set_community_moderator/i);
+    expect(migration).toMatch(/from public\.community_admins a where a\.user_id = auth\.uid\(\)/i);
+    expect(migration).toMatch(/revoke all on function public\.set_community_moderator\(uuid, boolean\) from public, anon/i);
+    expect(migration).toMatch(/grant execute on function public\.set_community_moderator\(uuid, boolean\) to authenticated/i);
+    expect(migration).toMatch(/revoke insert, update, delete on public\.community_moderators from anon, authenticated/i);
+  });
+
+  it("requires moderator membership for moderation actions", () => {
+    expect(migration).toMatch(/from public\.community_moderators m where m\.user_id = auth\.uid\(\)/i);
+    expect(migration).toMatch(/revoke all on function public\.moderate_community_post\(uuid, text, text\) from public, anon/i);
+    expect(migration).toMatch(/grant execute on function public\.moderate_community_post\(uuid, text, text\) to authenticated/i);
+  });
+
+  it("records how many pending reports each action affected", () => {
+    expect(migration).toMatch(/reports_affected integer not null default 0/i);
+    expect(migration).toMatch(/get diagnostics v_reports_affected = row_count/i);
+    expect(migration).toMatch(/set reports_affected = v_reports_affected/i);
+  });
+
+  it("limits author-name resolution to inserts and relevant column updates", () => {
+    expect(migration).toMatch(/before insert or update of user_id, author_name on public\.posts/i);
+  });
+
+  it("does not silently seed an administrator with a placeholder identity", () => {
+    expect(migration).not.toMatch(/00000000-0000-0000-0000-000000000000/i);
+    expect(migration).not.toMatch(/insert into public\.community_admins\s*\(user_id\)\s*values\s*\(/i);
+  });
+});
