@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Eye, EyeOff, History, ShieldAlert, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, History, ShieldAlert, Trash2, UserPlus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useUser } from "@/lib/data";
@@ -19,6 +19,8 @@ function ModeracaoComunidade() {
   const { data: user } = useUser();
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [moderatorUserId, setModeratorUserId] = useState("");
+  const [managingModerator, setManagingModerator] = useState(false);
 
   const { data: membership, isLoading: checkingAccess, error: membershipError } = useQuery({
     queryKey: ["community-moderator", user?.id],
@@ -29,6 +31,50 @@ function ModeracaoComunidade() {
       return (data ?? null) as ModeratorRow | null;
     },
   });
+
+  const { data: adminMembership, isLoading: checkingAdmin } = useQuery({
+    queryKey: ["community-admin", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await moderationDb.from("community_admins").select("user_id").eq("user_id", user!.id).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as ModeratorRow | null;
+    },
+  });
+
+  const { data: moderators = [], isLoading: loadingModerators, error: moderatorsError } = useQuery({
+    queryKey: ["community-moderator-roster"],
+    enabled: !!adminMembership,
+    queryFn: async () => {
+      const { data, error } = await moderationDb.from("community_moderators").select("user_id").order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as ModeratorRow[];
+    },
+  });
+
+  async function setModerator(userId: string, isModerator: boolean) {
+    const normalizedId = userId.trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedId)) {
+      toast.error("Informe um UUID válido da conta.");
+      return;
+    }
+    setManagingModerator(true);
+    const { error } = await moderationDb.rpc("set_community_moderator", {
+      p_user_id: normalizedId,
+      p_is_moderator: isModerator,
+    });
+    setManagingModerator(false);
+    if (error) {
+      toast.error(error.message || "Não foi possível atualizar a equipe.");
+      return;
+    }
+    toast.success(isModerator ? "Moderador adicionado." : "Moderador removido.");
+    setModeratorUserId("");
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["community-moderator-roster"] }),
+      queryClient.invalidateQueries({ queryKey: ["community-moderator"] }),
+    ]);
+  }
 
   const { data: reports = [], isLoading: loadingReports, error: reportsError } = useQuery({
     queryKey: ["moderation-reports"],
@@ -116,7 +162,7 @@ function ModeracaoComunidade() {
     ]);
   }
 
-  if (checkingAccess || (!!user && membership === undefined && !membershipError)) {
+  if (checkingAccess || checkingAdmin || (!!user && membership === undefined && !membershipError)) {
     return <AppShell title="Moderação"><p className="p-4 text-sm text-foreground/60">Verificando acesso administrativo…</p></AppShell>;
   }
 
@@ -132,6 +178,33 @@ function ModeracaoComunidade() {
     <AppShell title="Moderação">
       <a href="/comunidade" className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-bronze"><ArrowLeft className="h-4 w-4" /> Comunidade</a>
       <p className="mb-4 text-sm text-foreground/70">Denúncias privadas, ações reversíveis e histórico auditável. A prioridade considera o número de denúncias, mas nenhuma ação é automática.</p>
+      {adminMembership && (
+        <section className="mb-8 space-y-4 rounded-3xl border border-border bg-surface p-4">
+          <div>
+            <h2 className="text-lg font-bold">Equipe de moderação</h2>
+            <p className="mt-1 text-sm text-foreground/70">Área exclusiva da administração. Para adicionar ou remover alguém, use o UUID da conta no Supabase. A permissão é validada novamente no banco.</p>
+          </div>
+          <label className="block text-sm font-semibold">UUID da conta
+            <input value={moderatorUserId} onChange={(e) => setModeratorUserId(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autoComplete="off" className="mt-1 w-full rounded-2xl border border-border bg-background p-3 font-mono text-sm font-normal outline-none focus:ring-2 focus:ring-ring" />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button disabled={managingModerator || !moderatorUserId.trim()} onClick={() => void setModerator(moderatorUserId, true)} className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"><UserPlus className="h-4 w-4" /> Adicionar</button>
+            <button disabled={managingModerator || !moderatorUserId.trim()} onClick={() => void setModerator(moderatorUserId, false)} className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50"><UserMinus className="h-4 w-4" /> Remover</button>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold">Moderadores atuais</h3>
+            {loadingModerators && <p className="text-sm text-foreground/60">Carregando equipe…</p>}
+            {moderatorsError && <p className="text-sm text-destructive">Não foi possível carregar a equipe.</p>}
+            {!loadingModerators && !moderatorsError && moderators.length === 0 && <p className="text-sm text-foreground/60">Nenhum moderador cadastrado.</p>}
+            {moderators.map((moderator) => (
+              <div key={moderator.user_id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border p-3">
+                <code className="break-all text-xs">{moderator.user_id}</code>
+                {moderator.user_id === user?.id && <span className="text-xs font-semibold text-foreground/60">Sua conta</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Fila de denúncias</h2><span className="rounded-full bg-blush px-3 py-1 text-sm font-semibold">{reports.length} pendentes</span></div>
