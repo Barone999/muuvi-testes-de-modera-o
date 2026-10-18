@@ -90,7 +90,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 declare
   v_rpc_context boolean := coalesce(current_setting('muuvi.moderation_rpc', true), '') = 'on';
 begin
