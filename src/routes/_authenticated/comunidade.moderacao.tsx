@@ -52,6 +52,10 @@ function ModeracaoComunidade() {
     },
   });
 
+  // Administradoras herdam automaticamente a moderação (sem linha em community_moderators).
+  // A gestão da equipe continua exclusiva de administradoras (adminMembership).
+  const isStaff = !!membership || !!adminMembership;
+
   async function setModerator(userId: string, isModerator: boolean) {
     const normalizedId = userId.trim();
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(normalizedId)) {
@@ -73,12 +77,13 @@ function ModeracaoComunidade() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["community-moderator-roster"] }),
       queryClient.invalidateQueries({ queryKey: ["community-moderator"] }),
+      queryClient.invalidateQueries({ queryKey: ["community-staff"] }),
     ]);
   }
 
   const { data: reports = [], isLoading: loadingReports, error: reportsError } = useQuery({
     queryKey: ["moderation-reports"],
-    enabled: !!membership,
+    enabled: isStaff,
     queryFn: async () => {
       const { data, error } = await moderationDb.from("post_reports").select("*").eq("review_status", "pending").order("created_at", { ascending: true });
       if (error) throw error;
@@ -90,7 +95,7 @@ function ModeracaoComunidade() {
 
   const { data: posts = [] } = useQuery({
     queryKey: ["moderation-posts", reportedPostIds],
-    enabled: !!membership,
+    enabled: isStaff,
     queryFn: async () => {
       if (reportedPostIds.length === 0) return [] as ModeratedPostRow[];
       const { data, error } = await moderationDb.from("posts").select("*").in("id", reportedPostIds);
@@ -102,7 +107,7 @@ function ModeracaoComunidade() {
   // Keep this list independent from pending reports so reviewed posts remain recoverable.
   const { data: hiddenPosts = [], isLoading: loadingHiddenPosts, error: hiddenPostsError } = useQuery({
     queryKey: ["moderation-hidden-posts"],
-    enabled: !!membership,
+    enabled: isStaff,
     queryFn: async () => {
       const { data, error } = await moderationDb
         .from("posts")
@@ -116,7 +121,7 @@ function ModeracaoComunidade() {
 
   const { data: history = [] } = useQuery({
     queryKey: ["moderation-history"],
-    enabled: !!membership,
+    enabled: isStaff,
     queryFn: async () => {
       const { data, error } = await moderationDb.from("moderation_actions").select("*").order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
@@ -170,7 +175,7 @@ function ModeracaoComunidade() {
     return <AppShell title="Moderação"><p className="rounded-2xl bg-destructive/10 p-4 text-sm">Não foi possível verificar a autorização. A migração pode ainda não ter sido aplicada.</p></AppShell>;
   }
 
-  if (!membership) {
+  if (!isStaff) {
     return <AppShell title="Acesso restrito"><div className="space-y-3 rounded-3xl bg-surface p-5"><ShieldAlert className="h-8 w-8 text-bronze" /><p>Esta área é exclusiva para moderadores autorizados.</p><a href="/comunidade" className="text-sm font-semibold text-bronze">Voltar à comunidade</a></div></AppShell>;
   }
 
